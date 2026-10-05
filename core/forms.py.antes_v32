@@ -1,0 +1,65 @@
+from django import forms
+
+class LoginForm(forms.Form):
+    username=forms.CharField(label='Usuario o correo',widget=forms.TextInput(attrs={'placeholder':'Introduzca su usuario o correo'}))
+    password=forms.CharField(label='Contraseña',widget=forms.PasswordInput(attrs={'placeholder':'••••••••'}))
+
+class IdentificacionForm(forms.Form):
+    paisEmisorId=forms.IntegerField(initial=1,widget=forms.HiddenInput)
+    tipoDocumentoId=forms.IntegerField(label='Tipo de documento',initial=1,widget=forms.Select(choices=((1,'C · Cédula'),(2,'P · Pasaporte'))))
+    documentoNumero=forms.CharField(label='N.º documento de identidad',max_length=20)
+    primerNombre=forms.CharField(label='Primer nombre',max_length=100)
+    segundoNombre=forms.CharField(label='Segundo nombre',max_length=100,required=False)
+    primerApellido=forms.CharField(label='Primer apellido',max_length=100)
+    segundoApellido=forms.CharField(label='Segundo apellido',max_length=100,required=False)
+    aliasApodo=forms.CharField(label='Alias o apodo',max_length=100,required=False)
+    fechaNacimiento=forms.DateField(label='Fecha de nacimiento',required=False,widget=forms.DateInput(attrs={'type':'date'}))
+    nacionalidadId=forms.IntegerField(label='Nacionalidad',required=False)
+    sexoId=forms.IntegerField(label='Sexo',required=False)
+    referidoId=forms.IntegerField(required=False,widget=forms.HiddenInput)
+
+class CorreoForm(forms.Form):
+    correo=forms.EmailField(label='Correo electrónico',max_length=254)
+    principal=forms.BooleanField(label='Correo principal',required=False,initial=True)
+
+class TelefonoForm(forms.Form):
+    tipoContactoId=forms.ChoiceField(label='Tipo de teléfono')
+    codigoTelefonicoId=forms.ChoiceField(label='Código')
+    numero=forms.CharField(label='Número',min_length=7,max_length=20)
+    extension=forms.CharField(label='Extensión',max_length=10,required=False)
+    principal=forms.BooleanField(label='Teléfono principal',required=False)
+    usaWhatsapp=forms.BooleanField(label='Usa WhatsApp',required=False)
+    def __init__(self,*a,tipos=(),codigos=(),**k):
+        super().__init__(*a,**k); self.fields['tipoContactoId'].choices=tipos; self.fields['codigoTelefonicoId'].choices=codigos
+
+class ResidenciaForm(forms.Form):
+    paisId=forms.ChoiceField(label='País')
+    estadoId=forms.ChoiceField(label='Estado')
+    ciudadId=forms.ChoiceField(label='Ciudad',required=False)
+    municipioId=forms.ChoiceField(label='Municipio')
+    parroquiaId=forms.ChoiceField(label='Parroquia')
+    sectorId=forms.ChoiceField(label='Sector')
+    codigoPostalId=forms.ChoiceField(label='Código postal',required=False)
+    direccionComplementaria=forms.CharField(label='Dirección complementaria',required=False,max_length=500,widget=forms.Textarea(attrs={'rows':3}))
+    def __init__(self,*a,choices=None,**k):
+        super().__init__(*a,**k); choices=choices or {}
+        for f in ('paisId','estadoId','ciudadId','municipioId','parroquiaId','sectorId','codigoPostalId'):
+            self.fields[f].choices=choices.get(f,())
+
+class UsuarioForm(forms.Form):
+    username=forms.CharField(label='Usuario',max_length=100)
+    correoAcceso=forms.EmailField(label='Correo de acceso',max_length=254)
+    password=forms.CharField(label='Contraseña',min_length=8,widget=forms.PasswordInput)
+    confirmar=forms.CharField(label='Confirmar contraseña',widget=forms.PasswordInput)
+    def clean(self):
+        d=super().clean()
+        if d.get('password')!=d.get('confirmar'):self.add_error('confirmar','Las contraseñas no coinciden.')
+        return d
+
+class InvitacionForm(forms.Form):
+    referidoId=forms.ChoiceField(label='Persona que invita')
+    nombre=forms.CharField(label='Nombre del invitado',max_length=100,required=False)
+    apellido=forms.CharField(label='Apellido del invitado',max_length=100,required=False)
+    canal=forms.ChoiceField(label='Canal',choices=(('ENLACE','Copiar enlace'),('WHATSAPP','WhatsApp'),('CORREO','Correo electrónico')))
+    vigenciaHoras=forms.IntegerField(label='Vigencia en horas',min_value=1,max_value=720,initial=72)
+    def __init__(self,*a,personas=(),**k):super().__init__(*a,**k);self.fields['referidoId'].choices=personas

@@ -1,0 +1,165 @@
+from functools import wraps
+from io import BytesIO
+import base64, qrcode
+from django.contrib import messages
+from django.http import JsonResponse
+from django.shortcuts import render,redirect
+from .api import SiraApi,ApiError
+from .forms import *
+
+def login_required(view):
+ @wraps(view)
+ def w(request,*a,**k):
+  if not request.session.get('token'):return redirect('login')
+  return view(request,*a,**k)
+ return w
+
+def login_view(request):
+ if request.session.get('token'):return redirect('home')
+ f=LoginForm(request.POST or None)
+ if request.method=='POST' and f.is_valid():
+  try:
+   r=SiraApi(request).post('/auth/login',f.cleaned_data);request.session['token']=r['token'];request.session['usuario']=r.get('usuario');request.session['persona_id']=r.get('personaId');return redirect('home')
+  except (ApiError,KeyError) as e:messages.error(request,str(e))
+ return render(request,'core/login.html',{'form':f})
+def salir(request):request.session.flush();return redirect('login')
+
+@login_required
+def home(request):
+ try:p=SiraApi(request).get('/personas');u=SiraApi(request).get('/usuarios')
+ except ApiError as e:messages.error(request,str(e));p=[];u=[]
+ return render(request,'core/home.html',{'personas_total':len(p),'usuarios_total':len(u)})
+
+@login_required
+def personas(request):
+ try:rows=SiraApi(request).get('/personas')
+ except ApiError as e:messages.error(request,str(e));rows=[]
+ return render(request,'core/personas.html',{'rows':rows})
+
+def payload_persona(d):
+ return {k:(v.isoformat() if hasattr(v,'isoformat') else v) for k,v in d.items()}
+
+@login_required
+def persona_nueva(request):
+ f=IdentificacionForm(request.POST or None)
+ if request.method=='POST' and f.is_valid():
+  api=SiraApi(request);d=payload_persona(f.cleaned_data)
+  try:
+   existe=api.get('/personas/buscar',{'documento':d['documentoNumero'],'paisEmisorId':d['paisEmisorId'],'tipoDocumentoId':d['tipoDocumentoId']})
+   if existe.get('existe'):
+    pid=existe['persona']['id_persona'];messages.info(request,'La persona ya existe. Se abrió su perfil para edición.');return redirect('persona_editar',pid=pid)
+   r=api.post('/personas',d);pid=r['idPersona'];messages.success(request,'Identificación guardada. Continúe con el perfil.');return redirect('persona_editar',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_form.html',{'form':f,'modo':'crear','paso':1})
+
+@login_required
+def persona_editar(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}')
+ except ApiError as e:messages.error(request,str(e));return redirect('personas')
+ initial={'paisEmisorId':p.get('id_pais_emisor'),'tipoDocumentoId':p.get('id_tipo_documento'),'documentoNumero':p.get('documento_numero'),'primerNombre':p.get('primer_nombre'),'segundoNombre':p.get('segundo_nombre'),'primerApellido':p.get('primer_apellido'),'segundoApellido':p.get('segundo_apellido'),'aliasApodo':p.get('alias_apodo'),'fechaNacimiento':p.get('fecha_nacimiento'),'nacionalidadId':p.get('id_nacionalidad'),'sexoId':p.get('id_sexo'),'referidoId':p.get('id_referido')}
+ f=IdentificacionForm(request.POST or None,initial=initial)
+ if request.method=='POST' and f.is_valid():
+  try:api.put(f'/personas/{pid}',payload_persona(f.cleaned_data));messages.success(request,'Perfil actualizado. Continúe con contacto.');return redirect('persona_contacto',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_form.html',{'form':f,'modo':'editar','pid':pid,'paso':3})
+
+@login_required
+def persona_contacto(request,pid):
+ api=SiraApi(request)
+ try:
+  p=api.get(f'/personas/{pid}');data=api.get(f'/personas/{pid}/contactos');tipos=api.get('/geografia/tipos-contacto');codigos=api.get('/geografia/codigos-telefonicos')
+ except ApiError as e:messages.error(request,str(e));return redirect('persona_editar',pid=pid)
+ ft=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=[(x['id_tipo_contacto'],x['descripcion']) for x in tipos],codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']} · {x['descripcion']}") for x in codigos])
+ fc=CorreoForm(request.POST if request.POST.get('accion')=='correo' else None)
+ if request.method=='POST':
+  try:
+   if request.POST.get('accion')=='correo' and fc.is_valid():api.post(f'/personas/{pid}/contactos/correo',fc.cleaned_data);messages.success(request,'Correo agregado.');return redirect('persona_contacto',pid=pid)
+   if request.POST.get('accion')=='telefono' and ft.is_valid():api.post(f'/personas/{pid}/contactos/telefono',ft.cleaned_data);messages.success(request,'Teléfono agregado.');return redirect('persona_contacto',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_contacto.html',{'p':p,'data':data,'correo_form':fc,'telefono_form':ft,'pid':pid,'paso':4})
+
+@login_required
+def contacto_borrar(request,pid,tipo,cid):
+ if request.method=='POST':
+  try:SiraApi(request).delete(f'/personas/{pid}/contactos/{tipo}/{cid}');messages.success(request,'Contacto retirado.')
+  except ApiError as e:messages.error(request,str(e))
+ return redirect('persona_contacto',pid=pid)
+
+def choices(rows,idk,namek,blank='Seleccione…'):return [('',blank)]+[(str(x[idk]),x[namek]) for x in rows]
+@login_required
+def persona_residencia(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}');actual=api.get(f'/personas/{pid}/residencia/principal');paises=api.get('/geografia/paises')
+ except ApiError as e:messages.error(request,str(e));return redirect('persona_contacto',pid=pid)
+ r=actual.get('residencia',{}) if actual.get('existe') else {}
+ source=request.POST if request.method=='POST' else r
+ def val(new,old):return source.get(new) or source.get(old) or ''
+ ids={'paisId':val('paisId','id_pais'),'estadoId':val('estadoId','id_estado'),'ciudadId':val('ciudadId','id_ciudad'),'municipioId':val('municipioId','id_municipio'),'parroquiaId':val('parroquiaId','id_parroquia'),'sectorId':val('sectorId','id_sector_geografico'),'codigoPostalId':val('codigoPostalId','id_codigo_postal')}
+ try:
+  est=api.get('/geografia/estados',{'paisId':ids['paisId']}) if ids['paisId'] else [];ciu=api.get('/geografia/ciudades',{'estadoId':ids['estadoId']}) if ids['estadoId'] else [];mun=api.get('/geografia/municipios',{'ciudadId':ids['ciudadId']}) if ids['ciudadId'] else [];par=api.get('/geografia/parroquias',{'municipioId':ids['municipioId']}) if ids['municipioId'] else [];sec=api.get('/geografia/sectores',{'parroquiaId':ids['parroquiaId']}) if ids['parroquiaId'] else [];cp=api.get('/geografia/codigos-postales',{'sectorId':ids['sectorId']}) if ids['sectorId'] else []
+ except ApiError:est=ciu=mun=par=sec=cp=[]
+ ch={'paisId':choices(paises,'id_pais','desc_pais'),'estadoId':choices(est,'id_estado','desc_estado'),'ciudadId':choices(ciu,'id_ciudad','desc_ciudad'),'municipioId':choices(mun,'id_municipio','desc_municipio'),'parroquiaId':choices(par,'id_parroquia','desc_parroquia'),'sectorId':choices(sec,'id_sector_geografico','desc_sector_geografico'),'codigoPostalId':choices(cp,'id_codigo_postal','codigo_postal')}
+ initial={**ids,'direccionComplementaria':r.get('direccion_complementaria','')}
+ f=ResidenciaForm(request.POST or None,initial=initial,choices=ch)
+ if request.method=='POST' and f.is_valid():
+  try:api.put(f'/personas/{pid}/residencia/principal',f.cleaned_data);messages.success(request,'Residencia guardada. La Fase 1 quedó completa.');return redirect('persona_resumen',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_residencia.html',{'p':p,'form':f,'pid':pid,'paso':5})
+
+@login_required
+def geo_json(request,tipo):
+ param={'estados':'paisId','ciudades':'estadoId','municipios':'ciudadId','parroquias':'municipioId','sectores':'parroquiaId','codigos-postales':'sectorId'}.get(tipo)
+ if not param:return JsonResponse([],safe=False,status=404)
+ try:return JsonResponse(SiraApi(request).get(f'/geografia/{tipo}',{param:request.GET.get(param)}),safe=False)
+ except ApiError:return JsonResponse([],safe=False,status=502)
+
+@login_required
+def persona_resumen(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}');c=api.get(f'/personas/{pid}/contactos');r=api.get(f'/personas/{pid}/residencia/principal')
+ except ApiError as e:messages.error(request,str(e));return redirect('personas')
+ return render(request,'core/persona_resumen.html',{'p':p,'contactos':c,'residencia':r.get('residencia'),'pid':pid})
+
+@login_required
+def persona_eliminar(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}')
+ except ApiError as e:messages.error(request,str(e));return redirect('personas')
+ if request.method=='POST':
+  try:api.delete(f'/personas/{pid}');messages.success(request,'Persona de prueba eliminada.');return redirect('personas')
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_eliminar.html',{'p':p})
+
+@login_required
+def usuarios(request):
+ try:rows=SiraApi(request).get('/usuarios')
+ except ApiError as e:messages.error(request,str(e));rows=[]
+ return render(request,'core/usuarios.html',{'rows':rows})
+@login_required
+def usuario_crear(request,pid):
+ f=UsuarioForm(request.POST or None)
+ if request.method=='POST' and f.is_valid():
+  d=f.cleaned_data; payload={'personaId':pid,'username':d['username'],'correoAcceso':d['correoAcceso'],'password':d['password']}
+  try:SiraApi(request).post('/usuarios',payload);messages.success(request,'Usuario creado.');return redirect('usuarios')
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/usuario_form.html',{'form':f,'pid':pid})
+
+@login_required
+def invitaciones(request):
+ api=SiraApi(request)
+ try:pers=api.get('/personas');rows=api.get('/invitaciones')
+ except ApiError as e:messages.error(request,str(e));pers=[];rows=[]
+ f=InvitacionForm(request.POST or None,personas=[(x['id_persona'],f"{x.get('primer_nombre','')} {x.get('primer_apellido','')} · {x.get('documento_numero','')}") for x in pers])
+ generated=None
+ if request.method=='POST' and f.is_valid():
+  try:
+   r=api.post('/invitaciones',f.cleaned_data);url=request.build_absolute_uri(f"/registro/{r['token']}/");qr=qrcode.make(url);buf=BytesIO();qr.save(buf,format='PNG');generated={'url':url,'qr':base64.b64encode(buf.getvalue()).decode()};messages.success(request,'Invitación generada.')
+   rows=api.get('/invitaciones')
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/invitaciones.html',{'form':f,'rows':rows,'generated':generated})
+
+def registro_publico(request,token):
+ try:inv=SiraApi(request).post('/publico/invitaciones/validar',{'token':token})
+ except ApiError as e:return render(request,'core/registro_publico.html',{'error':str(e)})
+ return render(request,'core/registro_publico.html',{'inv':inv,'token':token})

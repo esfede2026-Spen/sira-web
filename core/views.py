@@ -1,0 +1,231 @@
+from functools import wraps
+from io import BytesIO
+import base64, qrcode, random, string
+from PIL import Image, ImageDraw, ImageFont
+from django.http import HttpResponse
+from django.contrib import messages
+from django.http import JsonResponse
+from django.shortcuts import render,redirect
+from .api import SiraApi,ApiError
+from .forms import *
+
+def login_required(view):
+ @wraps(view)
+ def w(request,*a,**k):
+  if not request.session.get('token'):return redirect('login')
+  return view(request,*a,**k)
+ return w
+
+def _nuevo_captcha(request):
+ code="".join(random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(5));request.session["captcha_code"]=code;return code
+def captcha_imagen(request):
+ code=request.session.get("captcha_code") or _nuevo_captcha(request);img=Image.new("RGB",(220,70),"#eef6fb");d=ImageDraw.Draw(img)
+ for _ in range(12):d.line((random.randint(0,220),random.randint(0,70),random.randint(0,220),random.randint(0,70)),fill="#8bb8d8",width=1)
+ d.text((38,18),code,fill="#083b72",font=ImageFont.load_default(size=28));buf=BytesIO();img.save(buf,"PNG");return HttpResponse(buf.getvalue(),content_type="image/png")
+def login_view(request):
+ if request.session.get('token'):return redirect('home')
+ if not request.session.get('captcha_code'):_nuevo_captcha(request)
+ f=LoginForm(request.POST or None)
+ if request.method=='POST' and f.is_valid():
+  if f.cleaned_data['captcha'].upper()!=request.session.get('captcha_code',''):
+   messages.error(request,'Código de seguridad incorrecto.');_nuevo_captcha(request)
+  else:
+   try:
+    d={'username':f.cleaned_data['username'],'password':f.cleaned_data['password']};r=SiraApi(request).post('/auth/login',d);request.session['token']=r['token'];request.session['usuario']=r.get('usuario');request.session['persona_id']=r.get('personaId');request.session.pop('captcha_code',None);return redirect('home')
+   except (ApiError,KeyError) as e:messages.error(request,str(e));_nuevo_captcha(request)
+ return render(request,'core/login.html',{'form':f})
+def salir(request):request.session.flush();return redirect('login')
+
+@login_required
+def home(request):
+ try:p=SiraApi(request).get('/personas');u=SiraApi(request).get('/usuarios')
+ except ApiError as e:messages.error(request,str(e));p=[];u=[]
+ return render(request,'core/home.html',{'personas_total':len(p),'usuarios_total':len(u)})
+
+@login_required
+def personas(request):
+ try:rows=SiraApi(request).get('/personas')
+ except ApiError as e:messages.error(request,str(e));rows=[]
+ return render(request,'core/personas.html',{'rows':rows})
+
+def payload_persona(d):
+ return {k:(v.isoformat() if hasattr(v,'isoformat') else v) for k,v in d.items()}
+
+@login_required
+def persona_nueva(request):
+ api=SiraApi(request)
+ try:nacs=api.get('/catalogos-v4/nacionalidades')
+ except ApiError:nacs=[]
+ ven=next((str(x['id_nacionalidad_catalogo']) for x in nacs if str(x.get('codigo','')).strip().upper()=='VE'),next((str(x['id_nacionalidad_catalogo']) for x in nacs),''))
+ f=IdentificacionForm(request.POST or None,initial={'nacionalidadCatalogoId':ven},nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'))
+ if request.method=='POST' and f.is_valid():
+  api=SiraApi(request);d=payload_persona(f.cleaned_data)
+  try:
+   existe=api.get('/personas/buscar',{'documento':d['documentoNumero'],'paisEmisorId':d['paisEmisorId'],'tipoDocumentoId':d['tipoDocumentoId']})
+   if existe.get('existe'):
+    pid=existe['persona']['id_persona'];messages.info(request,'La persona ya existe. Se abrió su perfil para edición.');return redirect('persona_editar',pid=pid)
+   r=api.post('/personas',d);pid=r['idPersona'];messages.success(request,'Identificación guardada. Continúe con el perfil.');return redirect('persona_editar',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_form.html',{'form':f,'modo':'crear','paso':1})
+
+@login_required
+def persona_editar(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}')
+ except ApiError as e:messages.error(request,str(e));return redirect('personas')
+ initial={'paisEmisorId':p.get('id_pais_emisor'),'tipoDocumentoId':p.get('id_tipo_documento'),'documentoNumero':p.get('documento_numero'),'primerNombre':p.get('primer_nombre'),'segundoNombre':p.get('segundo_nombre'),'primerApellido':p.get('primer_apellido'),'segundoApellido':p.get('segundo_apellido'),'aliasApodo':p.get('alias_apodo'),'fechaNacimiento':p.get('fecha_nacimiento'),'nacionalidadId':p.get('id_nacionalidad'),'sexoId':p.get('id_sexo'),'referidoId':p.get('id_referido')}
+ 
+ try:nacs=api.get('/catalogos-v4/nacionalidades')
+ except ApiError:nacs=[]
+ initial['nacionalidadCatalogoId']=p.get('id_nacionalidad_catalogo') or next((str(x['id_nacionalidad_catalogo']) for x in nacs if str(x.get('codigo','')).strip().upper()=='VE'),'');initial['consentimientoDatos']=p.get('consentimiento_datos')=='S'
+ f=IdentificacionForm(request.POST or None,initial=initial,nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'))
+ if request.method=='POST' and f.is_valid():
+  try:api.put(f'/personas/{pid}',payload_persona(f.cleaned_data));messages.success(request,'Perfil actualizado. Continúe con contacto.');return redirect('persona_contacto',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_form.html',{'form':f,'modo':'editar','pid':pid,'paso':3})
+
+@login_required
+def persona_contacto(request,pid):
+ api=SiraApi(request)
+ try:
+  p=api.get(f'/personas/{pid}');data=api.get(f'/personas/{pid}/contactos');tipos=api.get('/geografia/tipos-contacto');codigos=api.get('/geografia/codigos-telefonicos')
+ except ApiError as e:messages.error(request,str(e));return redirect('persona_editar',pid=pid)
+ ft=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=[(x['id_tipo_contacto'],x['descripcion']) for x in tipos],codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']} · {x['descripcion']}") for x in codigos])
+ fc=CorreoForm(request.POST if request.POST.get('accion')=='correo' else None)
+ if request.method=='POST':
+  try:
+   if request.POST.get('accion')=='correo' and fc.is_valid():api.post(f'/personas/{pid}/contactos/correo',fc.cleaned_data);messages.success(request,'Correo agregado.');return redirect('persona_contacto',pid=pid)
+   if request.POST.get('accion')=='telefono' and ft.is_valid():api.post(f'/personas/{pid}/contactos/telefono',ft.cleaned_data);messages.success(request,'Teléfono agregado.');return redirect('persona_contacto',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_contacto.html',{'p':p,'data':data,'correo_form':fc,'telefono_form':ft,'pid':pid,'paso':4})
+
+@login_required
+def contacto_borrar(request,pid,tipo,cid):
+ if request.method=='POST':
+  try:SiraApi(request).delete(f'/personas/{pid}/contactos/{tipo}/{cid}');messages.success(request,'Contacto retirado.')
+  except ApiError as e:messages.error(request,str(e))
+ return redirect('persona_contacto',pid=pid)
+
+def choices(rows,idk,namek,blank='Seleccione…'):return [('',blank)]+[(str(x[idk]),x[namek]) for x in rows]
+@login_required
+def persona_residencia(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}');actual=api.get(f'/personas/{pid}/residencia/principal');paises=api.get('/geografia/paises')
+ except ApiError as e:messages.error(request,str(e));return redirect('persona_contacto',pid=pid)
+ r=actual.get('residencia',{}) if actual.get('existe') else {}
+ source=request.POST if request.method=='POST' else r
+ def val(new,old):return source.get(new) or source.get(old) or ''
+ ids={'paisId':val('paisId','id_pais'),'estadoId':val('estadoId','id_estado'),'ciudadId':val('ciudadId','id_ciudad'),'municipioId':val('municipioId','id_municipio'),'parroquiaId':val('parroquiaId','id_parroquia'),'tipoSectorId':val('tipoSectorId','id_tipo_sector_geografico'),'sectorId':val('sectorId','id_sector_geografico'),'codigoPostalId':val('codigoPostalId','id_codigo_postal')}
+ try:
+  est=api.get('/geografia/estados',{'paisId':ids['paisId']}) if ids['paisId'] else [];ciu=api.get('/geografia/ciudades',{'estadoId':ids['estadoId']}) if ids['estadoId'] else [];mun=api.get('/geografia/municipios',{'ciudadId':ids['ciudadId']}) if ids['ciudadId'] else [];par=api.get('/geografia/parroquias',{'municipioId':ids['municipioId']}) if ids['municipioId'] else [];tipsec=api.get('/geografia/tipos-sector');sec=api.get('/geografia/sectores',{'estadoId':ids['estadoId'],'ciudadId':ids['ciudadId'],'municipioId':ids['municipioId'],'parroquiaId':ids['parroquiaId'],'tipoSectorId':ids['tipoSectorId']}) if ids['estadoId'] else [];cp=api.get('/geografia/codigos-postales',{'sectorId':ids['sectorId']}) if ids['sectorId'] else []
+ except ApiError:est=ciu=mun=par=tipsec=sec=cp=[]
+ ch={'paisId':choices(paises,'id_pais','desc_pais'),'estadoId':choices(est,'id_estado','desc_estado'),'ciudadId':choices(ciu,'id_ciudad','desc_ciudad'),'municipioId':choices(mun,'id_municipio','desc_municipio'),'parroquiaId':choices(par,'id_parroquia','desc_parroquia'),'tipoSectorId':choices(tipsec,'id_tipo_sector_geografico','desc_tipo_sector_geografico'),'sectorId':choices(sec,'id_sector_geografico','desc_sector_geografico'),'codigoPostalId':choices(cp,'id_codigo_postal','codigo_postal')}
+ initial={**ids,'direccionComplementaria':r.get('direccion_complementaria','')}
+ f=ResidenciaForm(request.POST or None,initial=initial,choices=ch)
+ if request.method=='POST' and f.is_valid():
+  try:api.put(f'/personas/{pid}/residencia/principal',f.cleaned_data);messages.success(request,'Residencia guardada.');return redirect('persona_academico',pid=pid)
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_residencia.html',{'p':p,'form':f,'pid':pid,'paso':5})
+
+@login_required
+def geo_json(request,tipo):
+ param={'estados':'paisId','ciudades':'estadoId','municipios':'ciudadId','parroquias':'municipioId','sectores':'parroquiaId','codigos-postales':'sectorId','tipos-sector':'ninguno'}.get(tipo)
+ if not param:return JsonResponse([],safe=False,status=404)
+ try:return JsonResponse(SiraApi(request).get(f'/geografia/{tipo}',({'estadoId':request.GET.get('estadoId'),'ciudadId':request.GET.get('ciudadId'),'municipioId':request.GET.get('municipioId'),'parroquiaId':request.GET.get('parroquiaId'),'tipoSectorId':request.GET.get('tipoSectorId')} if tipo=='sectores' else {param:request.GET.get(param)})),safe=False)
+ except ApiError:return JsonResponse([],safe=False,status=502)
+
+@login_required
+def persona_resumen(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}');c=api.get(f'/personas/{pid}/contactos');r=api.get(f'/personas/{pid}/residencia/principal')
+ except ApiError as e:messages.error(request,str(e));return redirect('personas')
+ return render(request,'core/persona_resumen.html',{'p':p,'contactos':c,'residencia':r.get('residencia'),'pid':pid})
+
+@login_required
+def persona_eliminar(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}')
+ except ApiError as e:messages.error(request,str(e));return redirect('personas')
+ if request.method=='POST':
+  try:api.delete(f'/personas/{pid}');messages.success(request,'Persona de prueba eliminada.');return redirect('personas')
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/persona_eliminar.html',{'p':p})
+
+@login_required
+def usuarios(request):
+ try:rows=SiraApi(request).get('/usuarios')
+ except ApiError as e:messages.error(request,str(e));rows=[]
+ return render(request,'core/usuarios.html',{'rows':rows})
+@login_required
+def usuario_crear(request,pid):
+ f=UsuarioForm(request.POST or None)
+ if request.method=='POST' and f.is_valid():
+  d=f.cleaned_data; payload={'personaId':pid,'username':d['username'],'correoAcceso':d['correoAcceso'],'password':d['password']}
+  try:SiraApi(request).post('/usuarios',payload);messages.success(request,'Usuario creado.');return redirect('usuarios')
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/usuario_form.html',{'form':f,'pid':pid})
+
+@login_required
+def invitaciones(request):
+ api=SiraApi(request)
+ try:pers=api.get('/personas');rows=api.get('/invitaciones')
+ except ApiError as e:messages.error(request,str(e));pers=[];rows=[]
+ f=InvitacionForm(request.POST or None,personas=[(x['id_persona'],f"{x.get('primer_nombre','')} {x.get('primer_apellido','')} · {x.get('documento_numero','')}") for x in pers])
+ generated=None
+ if request.method=='POST' and f.is_valid():
+  try:
+   r=api.post('/invitaciones',f.cleaned_data);url=request.build_absolute_uri(f"/registro/{r['token']}/");qr=qrcode.make(url);buf=BytesIO();qr.save(buf,format='PNG');generated={'url':url,'qr':base64.b64encode(buf.getvalue()).decode()};messages.success(request,'Invitación generada.')
+   rows=api.get('/invitaciones')
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/invitaciones.html',{'form':f,'rows':rows,'generated':generated})
+
+def registro_publico(request,token):
+ try:inv=SiraApi(request).post('/publico/invitaciones/validar',{'token':token})
+ except ApiError as e:return render(request,'core/registro_publico.html',{'error':str(e)})
+ return render(request,'core/registro_publico.html',{'inv':inv,'token':token})
+
+@login_required
+def persona_academico(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}');d=api.get(f'/personas/{pid}/academico')
+ except ApiError as e:messages.error(request,str(e));return redirect('persona_residencia',pid=pid)
+ def cat(ep,idk):return choices(api.get('/catalogos-v4/'+ep),idk,'descripcion')
+ c={'niveles':cat('niveles','id_nivel'),'especialidades':cat('especialidades','id_especialidad'),'honores':cat('honores','id_honor'),'disponibilidades':cat('disponibilidades','id_disponibilidad'),'modalidades':cat('modalidades','id_modalidad')}
+ initial={'nivelId':d.get('id_nivel'),'titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'titulo2':d.get('titulo_2'),'especialidad2Id':d.get('id_especialidad_2'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')}
+ f=AcademicoForm(request.POST or None,initial=initial,c=c)
+ if request.method=='POST' and f.is_valid():api.put(f'/personas/{pid}/academico',f.cleaned_data);messages.success(request,'Datos académicos guardados.');return redirect('persona_grupos',pid=pid)
+ return render(request,'core/persona_academico.html',{'p':p,'form':f,'pid':pid,'paso':6})
+@login_required
+def persona_grupos(request,pid):
+ api=SiraApi(request)
+ try:p=api.get(f'/personas/{pid}');todos=api.get('/grupos');asignados=api.get(f'/personas/{pid}/grupos')
+ except ApiError as e:messages.error(request,str(e));return redirect('persona_academico',pid=pid)
+ f=GrupoPersonaForm(request.POST or None);f.fields['grupoId'].choices=choices(todos,'id_grupo','descripcion')
+ if request.method=='POST' and f.is_valid():api.post(f"/personas/{pid}/grupos/{f.cleaned_data['grupoId']}",{});messages.success(request,'Grupo agregado.');return redirect('persona_grupos',pid=pid)
+ return render(request,'core/persona_grupos.html',{'p':p,'form':f,'rows':asignados,'pid':pid,'paso':7})
+@login_required
+def persona_grupo_quitar(request,pid,gid):
+ if request.method=='POST':SiraApi(request).delete(f'/personas/{pid}/grupos/{gid}')
+ return redirect('persona_grupos',pid=pid)
+
+@login_required
+def grupos_admin(request):
+ api=SiraApi(request);edit_id=request.GET.get('editar');initial={}
+ try:rows=api.get('/grupos')
+ except ApiError as e:messages.error(request,str(e));rows=[]
+ if edit_id:
+  x=next((x for x in rows if str(x.get('id_grupo'))==str(edit_id)),None);initial={'descripcion':x.get('descripcion')} if x else {}
+ f=forms.Form(request.POST or None);f.fields['descripcion']=forms.CharField(label='Descripción',max_length=180,initial=initial.get('descripcion'))
+ if request.method=='POST' and f.is_valid():
+  try:
+   if request.POST.get('idGrupo'):api.put('/grupos/'+request.POST['idGrupo'],f.cleaned_data)
+   else:api.post('/grupos',f.cleaned_data)
+   messages.success(request,'Grupo guardado.');return redirect('grupos_admin')
+  except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/grupos_admin.html',{'rows':rows,'form':f,'edit_id':edit_id})
+@login_required
+def grupo_eliminar(request,gid):
+ if request.method=='POST':
+  try:SiraApi(request).delete(f'/grupos/{gid}');messages.success(request,'Grupo eliminado.')
+  except ApiError as e:messages.error(request,str(e))
+ return redirect('grupos_admin')
