@@ -46,18 +46,3 @@ body:has(.login){overflow-y:auto}.login{height:min(760px,calc(100vh - 150px));mi
 }
 @media(max-width:430px){.brand b{font-size:20px}.card{padding:18px 14px}.login .welcome{height:220px!important;min-height:220px!important}.login .welcome h1{font-size:25px!important}}
 @media(min-width:901px){.top nav{display:flex!important}}
-
-
-/* HOTFIX V2.1: fuerza visibilidad correcta y limita la barra a la grilla */
-.menu-toggle,.menu-close,.nav-overlay,.mobile-action-bar{display:none!important}
-@media(max-width:900px){
- .menu-toggle,.menu-close{display:grid!important}
- .nav-overlay{display:block!important}
- .mobile-action-bar{display:grid!important;width:min(720px,calc(100% - 20px));left:50%!important;right:auto!important;transform:translateX(-50%)}
- main{width:100%;max-width:1420px;margin-left:auto;margin-right:auto}
-}
-@media(min-width:901px){
- .menu-toggle,.menu-close,.nav-overlay,.mobile-action-bar{display:none!important}
- .top nav{display:flex!important;transform:none!important;position:static!important;width:auto!important;padding:0!important;overflow:visible!important;box-shadow:none!important}
- body{padding-bottom:0!important}
-}

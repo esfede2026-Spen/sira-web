@@ -24,5 +24,3 @@ document.addEventListener('DOMContentLoaded',()=>{
  if(!primary){save?.setAttribute('disabled','');save?.classList.add('is-disabled');}
  save?.addEventListener('click',()=>primary?.requestSubmit());
 });
-
-console.info('SIRA responsive CDC v2.1 cargado');

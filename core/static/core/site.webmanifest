@@ -1,0 +1,30 @@
+{
+  "name": "SIRA",
+  "short_name": "SIRA",
+  "description": "Sistema Inteligente de Registro Activo",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f6fa",
+  "theme_color": "#06396f",
+  "icons": [
+    {
+      "src": "img/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "img/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
