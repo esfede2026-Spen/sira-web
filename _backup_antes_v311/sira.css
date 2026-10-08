@@ -48,33 +48,3 @@ body:has(.login){overflow-y:auto}.login{height:min(760px,calc(100vh - 150px));mi
 
 /* V3.9 public compact + mobile */
 .public-entry-grid{max-width:620px;margin:auto;grid-template-columns:minmax(180px,1fr) minmax(180px,1fr)}.location-consent{display:flex!important;align-items:center;gap:9px;padding:9px 12px;background:#edf6f8;border:1px solid var(--line);border-radius:10px}.location-consent input{width:20px}.permission-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.check{display:flex;gap:8px;align-items:flex-start;padding:10px;background:#f3f8fc;border-radius:8px}.check input{width:18px}.check small{display:block;font-weight:400}.narrow{max-width:650px;margin:auto}@media(max-width:760px){.top{min-height:82px;padding:8px 14px}.brand img{width:58px;height:58px}.brand b{font-size:23px}.menu-toggle{display:block;position:relative;z-index:1002}.top nav{position:fixed;inset:0 0 0 24%;z-index:1001;background:linear-gradient(135deg,var(--navy),var(--blue));padding:90px 28px 30px;display:flex;flex-direction:column;align-items:stretch;gap:8px;transform:translateX(100%);transition:.2s}.menu-open .top nav{transform:none}.menu-close{display:block!important;position:absolute;top:20px;right:20px}.nav-overlay{display:none;position:fixed;inset:0;z-index:1000;background:#001a3b88}.menu-open .nav-overlay{display:block}.public-registro{width:calc(100% - 20px)!important;margin:12px 10px!important;border-radius:18px!important}.public-head{align-items:center}.public-head img{width:72px!important;height:72px!important}.public-head h1{font-size:25px}.public-entry-grid{grid-template-columns:1fr;max-width:none}.permission-grid{grid-template-columns:1fr}.table{overflow-x:auto}.table table{min-width:760px}main{padding:20px 10px}}
-
-/* V3.11 asistente publico responsive */
-.public-flow{max-width:980px;margin:28px auto;padding:28px;overflow:hidden}
-.public-flow .public-head{display:flex;justify-content:center;align-items:center;gap:18px;margin-bottom:18px}
-.public-flow .public-head img{flex:0 0 auto}
-.public-flow .public-tabs{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin;padding:2px 2px 10px;margin:0 0 8px;white-space:nowrap}
-.public-flow .public-tabs a{flex:0 0 auto;scroll-snap-align:start;min-height:42px;display:flex;align-items:center;justify-content:center}
-.public-flow .wizard-actions-top{margin:0 0 10px}
-.public-flow .wizard-body{max-width:none;padding:26px}
-.public-flow .wizard-body form:not(.inline){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px}
-.public-flow .wizard-body form:not(.inline)>p{margin:0;min-width:0}
-.public-flow .wizard-body form:not(.inline)>.buttons,
-.public-flow .wizard-body form:not(.inline)>button,
-.public-flow .wizard-body form:not(.inline)>.full{grid-column:1/-1}
-.public-flow .wizard-body input,.public-flow .wizard-body select,.public-flow .wizard-body textarea{width:100%;max-width:100%;box-sizing:border-box}
-.public-flow dl{display:grid;grid-template-columns:minmax(90px,150px) 1fr;gap:10px 14px;margin:0 0 18px}
-.public-flow dt{font-weight:700}.public-flow dd{margin:0;overflow-wrap:anywhere}
-@media(max-width:760px){
- body{overflow-x:hidden}.top{min-height:72px}.top .brand small{display:none}.top .brand img{width:50px;height:50px}.top .brand b{font-size:24px;letter-spacing:.22em}
- main{padding:14px 0 76px!important}.public-flow{width:calc(100% - 20px)!important;max-width:none;margin:10px!important;padding:14px!important;border-radius:16px!important;box-sizing:border-box}
- .public-flow .public-head{justify-content:flex-start;gap:12px;margin:0 0 12px}.public-flow .public-head img{width:62px!important;height:62px!important}.public-flow .public-head h1{font-size:24px;line-height:1.04;margin:0 0 5px}.public-flow .public-head p{font-size:13px;line-height:1.25;margin:0}
- .public-flow .public-tabs{margin-left:-2px;margin-right:-2px;padding-bottom:8px;-webkit-overflow-scrolling:touch}.public-flow .public-tabs a{font-size:12px;padding:10px 12px;min-height:38px;border-radius:8px}
- .public-flow .wizard-actions-top{margin-bottom:8px}.public-flow .wizard-actions-top button{width:auto;min-height:38px;padding:8px 14px;font-size:13px}
- .public-flow .wizard-body{padding:16px 14px;border-radius:12px}.public-flow .wizard-body h2{font-size:22px;margin:0 0 16px}
- .public-flow .wizard-body form:not(.inline){grid-template-columns:1fr;gap:12px}.public-flow .wizard-cols{grid-template-columns:1fr!important}
- .public-flow label{font-size:13px}.public-flow input,.public-flow select,.public-flow textarea{min-height:44px;font-size:16px!important;padding:10px 12px!important}.public-flow textarea{min-height:86px}
- .public-flow dl{grid-template-columns:92px minmax(0,1fr);gap:8px 10px;font-size:14px}.public-flow .primary,.public-flow .secondary{min-height:44px;padding:10px 14px}
- .public-flow .note{padding:12px}.public-flow .note small{line-height:1.35}.public-flow footer{font-size:10px}
-}
-@media(max-width:390px){.public-flow{width:calc(100% - 12px)!important;margin:6px!important;padding:11px!important}.public-flow .public-head img{width:54px!important;height:54px!important}.public-flow .public-head h1{font-size:21px}.public-flow .wizard-body{padding:14px 12px}.public-flow dl{grid-template-columns:82px minmax(0,1fr)}}
