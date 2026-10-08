@@ -90,7 +90,7 @@ def persona_contacto(request,pid):
  try:
   p=api.get(f'/personas/{pid}');data=api.get(f'/personas/{pid}/contactos');tipos=api.get('/geografia/tipos-contacto');codigos=api.get('/geografia/codigos-telefonicos')
  except ApiError as e:messages.error(request,str(e));return redirect('persona_editar',pid=pid)
- ft=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=[(x['id_tipo_contacto'],x['descripcion']) for x in tipos],codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
+ ft=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=[(x['id_tipo_contacto'],x['descripcion']) for x in tipos],codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']} · {x['descripcion']}") for x in codigos])
  fc=CorreoForm(request.POST if request.POST.get('accion')=='correo' else None)
  if request.method=='POST':
   try:
@@ -184,8 +184,8 @@ def registro_publico(request,token):
  if not request.session.get('captcha_publico'):_nuevo_captcha_publico(request)
 
  try:codigos=api.get('/publico/invitaciones/codigos-telefonicos')
- except ApiError as e:codigos=[];messages.error(request,'No se pudo cargar código telefónico desde SIRA API: '+str(e))
- f=RegistroPublicoInicialForm(request.POST or None,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
+ except ApiError:codigos=[]
+ f=RegistroPublicoInicialForm(request.POST or None,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']} · {x['descripcion']}") for x in codigos])
  resultado=None
  if request.method=='POST' and f.is_valid():
   if f.cleaned_data['captcha'].upper()!=request.session.get('captcha_publico',''):
@@ -296,7 +296,7 @@ def registro_publico_paso(request,token,seccion):
    ns=api.get('/publico/invitaciones/catalogos/nacionalidades');p=ctx['persona'];initial={'paisEmisorId':p.get('id_pais_emisor'),'tipoDocumentoId':p.get('id_tipo_documento'),'documentoNumero':p.get('documento_numero'),'primerNombre':p.get('primer_nombre'),'segundoNombre':p.get('segundo_nombre'),'primerApellido':p.get('primer_apellido'),'segundoApellido':p.get('segundo_apellido'),'aliasApodo':p.get('alias_apodo'),'fechaNacimiento':p.get('fecha_nacimiento'),'nacionalidadCatalogoId':p.get('id_nacionalidad_catalogo'),'consentimientoDatos':True};form=IdentificacionForm(request.POST or None,initial=initial,nacionalidades=choices(ns,'id_nacionalidad_catalogo','descripcion'))
    if request.method=='POST' and form.is_valid():api.put(f'/publico/invitaciones/{token}/personales?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='contacto')
   elif seccion=='contacto':
-   tipos=api.get('/publico/invitaciones/tipos-contacto');codigos=api.get('/publico/invitaciones/codigos-telefonicos');form=TelefonoForm(request.POST or None,tipos=choices(tipos,'id_tipo_contacto','descripcion'),codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos]);form2=CorreoForm(request.POST or None,prefix='correo')
+   tipos=api.get('/publico/invitaciones/tipos-contacto');codigos=api.get('/publico/invitaciones/codigos-telefonicos');form=TelefonoForm(request.POST or None,tipos=choices(tipos,'id_tipo_contacto','descripcion'),codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']} · {x['descripcion']}") for x in codigos]);form2=CorreoForm(request.POST or None,prefix='correo')
    if request.method=='POST':
     if request.POST.get('accion')=='telefono' and form.is_valid():api.post(f'/publico/invitaciones/{token}/telefono?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='contacto')
     if request.POST.get('accion')=='correo' and form2.is_valid():api.post(f'/publico/invitaciones/{token}/correo?usoId={request.session.get("registro_publico_uso_id","")}',form2.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='contacto')
@@ -329,29 +329,3 @@ def registro_publico_salir(request,token):
   except ApiError as e:messages.error(request,str(e));return redirect('registro_publico_paso',token=token,seccion='finalizar')
  for k in ('registro_publico_token','registro_publico_persona_id','registro_publico_uso_id','registro_publico_resultado'):request.session.pop(k,None)
  return render(request,'core/publico_salida.html')
-
-
-@login_required
-def usuario_gestion(request,uid=None):
- api=SiraApi(request);u=api.get(f'/usuarios/{uid}') if uid else None;personas=api.get('/usuarios/catalogos/personas-sin-usuario');roles=api.get('/usuarios/catalogos/roles');initial={'personaId':u.get('id_persona'),'username':u.get('username'),'correoAcceso':u.get('correo_acceso'),'estado':u.get('estado'),'bloqueado':u.get('bloqueado')=='S'} if u else {};f=UsuarioGestionForm(request.POST or None,initial=initial);f.fields['personaId'].choices=[(str(x['id_persona']),f"{x['nombre']} · {x['documento_numero']}") for x in personas]+([(str(u['id_persona']),u['persona'])] if u else []);asignados=[str(x['id_rol']) for x in u.get('roles',[])] if u else []
- if request.method=='POST' and f.is_valid():
-  d=f.cleaned_data;d['roles']=[int(x) for x in request.POST.getlist('roles')];api.put(f'/usuarios/{uid}',d) if uid else api.post('/usuarios',d);messages.success(request,'Usuario guardado.');return redirect('usuarios')
- return render(request,'core/usuario_gestion.html',{'form':f,'usuario':u,'roles':roles,'asignados':asignados})
-@login_required
-def usuario_password(request,uid):
- f=PasswordForm(request.POST or None)
- if request.method=='POST' and f.is_valid():SiraApi(request).post(f'/usuarios/{uid}/password',{'password':f.cleaned_data['password']});messages.success(request,'Contraseña actualizada.');return redirect('usuarios')
- return render(request,'core/usuario_password.html',{'form':f})
-@login_required
-def usuario_eliminar(request,uid):
- if request.method=='POST':
-  try:SiraApi(request).delete(f'/usuarios/{uid}');messages.success(request,'Usuario eliminado.')
-  except ApiError as e:messages.error(request,str(e))
- return redirect('usuarios')
-@login_required
-def roles(request):return render(request,'core/roles.html',{'rows':SiraApi(request).get('/usuarios/roles')})
-@login_required
-def rol_permisos(request,rid):
- api=SiraApi(request)
- if request.method=='POST':api.put(f'/usuarios/roles/{rid}/permisos',{'permisos':[int(x) for x in request.POST.getlist('permisos')]});messages.success(request,'Permisos guardados.');return redirect('roles')
- return render(request,'core/rol_permisos.html',{'data':api.get(f'/usuarios/roles/{rid}/permisos')})

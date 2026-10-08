@@ -49,18 +49,8 @@ class RegistroPublicoInicialForm(forms.Form):
  codigoTelefonicoId=forms.ChoiceField(label='Código telefónico')
  numero=forms.CharField(label='Teléfono',min_length=7,max_length=7,validators=[RegexValidator(r'^\d{7}$','Introduzca exactamente 7 dígitos.')],widget=forms.TextInput(attrs={'inputmode':'numeric','maxlength':'7'}))
  correo=forms.EmailField(label='Correo electrónico',max_length=254)
- autorizaUbicacion=forms.BooleanField(label='Autorizo ubicación',required=False)
  ubicacion=forms.CharField(label='Ubicación (referencia opcional)',required=False,max_length=250,widget=forms.TextInput(attrs={'placeholder':'Sector, ciudad o referencia'}))
  consentimientoDatos=forms.BooleanField(label='Acepto y doy consentimiento para el uso de mis datos',required=True)
  captcha=forms.CharField(label='Código de seguridad',max_length=6,widget=forms.TextInput(attrs={'autocomplete':'off'}))
  def __init__(self,*a,codigos=(),**k):
   super().__init__(*a,**k);self.fields['codigoTelefonicoId'].choices=codigos
-
-class UsuarioGestionForm(forms.Form):
- personaId=forms.ChoiceField(label='Persona');username=forms.CharField(label='Usuario',max_length=100);correoAcceso=forms.EmailField(label='Correo',required=False);estado=forms.ChoiceField(label='Estado',choices=(('ACTIVO','Activo'),('INACTIVO','Inactivo')));bloqueado=forms.BooleanField(label='Bloqueado',required=False);password=forms.CharField(label='Contraseña inicial',required=False,widget=forms.PasswordInput)
-class PasswordForm(forms.Form):
- password=forms.CharField(label='Nueva contraseña',min_length=8,widget=forms.PasswordInput);confirmar=forms.CharField(label='Confirmar contraseña',widget=forms.PasswordInput)
- def clean(self):
-  d=super().clean()
-  if d.get('password')!=d.get('confirmar'):self.add_error('confirmar','Las contraseñas no coinciden.')
-  return d
