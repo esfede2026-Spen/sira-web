@@ -14,10 +14,6 @@ document.addEventListener('DOMContentLoaded',()=>{
   }catch{console.error('No se pudo cargar '+tipo)}
  }
  if($('tipoSectorId')&&$('tipoSectorId').options.length<=1)load('tipos-sector',{},'tipoSectorId','id_tipo_sector_geografico','desc_tipo_sector_geografico');
- if($('paisId')?.value&&$('estadoId')?.options.length<=1)load('estados',{paisId:$('paisId').value},'estadoId','id_estado','desc_estado');
- if($('estadoId')?.value&&$('ciudadId')?.options.length<=1)load('ciudades',{estadoId:$('estadoId').value},'ciudadId','id_ciudad','desc_ciudad');
- if($('ciudadId')?.value&&$('municipioId')?.options.length<=1)load('municipios',{ciudadId:$('ciudadId').value},'municipioId','id_municipio','desc_municipio');
- if($('municipioId')?.value&&$('parroquiaId')?.options.length<=1)load('parroquias',{municipioId:$('municipioId').value},'parroquiaId','id_parroquia','desc_parroquia');
  $('paisId')?.addEventListener('change',e=>{['estadoId','ciudadId','municipioId','parroquiaId','sectorId','codigoPostalId'].forEach(reset);load('estados',{paisId:e.target.value},'estadoId','id_estado','desc_estado')});
  $('estadoId')?.addEventListener('change',e=>{['ciudadId','municipioId','parroquiaId','sectorId','codigoPostalId'].forEach(reset);load('ciudades',{estadoId:e.target.value},'ciudadId','id_ciudad','desc_ciudad')});
  $('ciudadId')?.addEventListener('change',e=>{['municipioId','parroquiaId','sectorId','codigoPostalId'].forEach(reset);load('municipios',{ciudadId:e.target.value},'municipioId','id_municipio','desc_municipio')});

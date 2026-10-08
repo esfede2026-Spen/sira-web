@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Registro por invitación · SIRA{% endblock %}
+{% block content %}
+<section class="public card public-registro public-flow">
+  <header class="public-head">
+    <img src="{% static 'core/img/SIRA_logo_icono.png' %}" alt="SIRA">
+    <div><h1>Registro por invitación</h1><p>Complete las secciones que tenga disponibles.</p></div>
+  </header>
+  {% if error %}
+    <div class="alert">{{ error }}</div>
+  {% else %}
+    <nav class="public-tabs">
+      {% for s in steps %}
+        <a class="{% if s == seccion %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion=s %}">{{ s|title }}</a>
+      {% endfor %}
+    </nav>
+    <div class="wizard-actions-top">
+      <form method="post" action="{% url 'registro_publico_salir' token=token %}">
+        {% csrf_token %}
+        <button type="submit" class="secondary">Finalizar y salir</button>
+      </form>
+    </div>
+    <div class="wizard-body">
+      <h2>{{ seccion|title }}</h2>
+      {% if seccion == 'identificacion' %}
+        <dl>
+          <dt>Documento</dt><dd>{{ ctx.persona.documento_numero }}</dd>
+          <dt>Nombres</dt><dd>{{ ctx.persona.primer_nombre|default_if_none:'' }} {{ ctx.persona.segundo_nombre|default_if_none:'' }}</dd>
+          <dt>Apellidos</dt><dd>{{ ctx.persona.primer_apellido|default_if_none:'' }} {{ ctx.persona.segundo_apellido|default_if_none:'' }}</dd>
+        </dl>
+        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='personales' %}">Continuar</a>
+      {% elif seccion == 'electoral' %}
+        {% if ctx.electoral.existe %}
+          <dl>
+            <dt>Estado</dt><dd>{{ ctx.electoral.registro.estado|default:'—' }}</dd>
+            <dt>Municipio</dt><dd>{{ ctx.electoral.registro.municipio|default:'—' }}</dd>
+            <dt>Parroquia</dt><dd>{{ ctx.electoral.registro.parroquia|default:'—' }}</dd>
+            <dt>Centro</dt><dd>{{ ctx.electoral.registro.centro_electoral|default:'—' }}</dd>
+          </dl>
+        {% else %}<p>No existe resultado electoral guardado.</p>{% endif %}
+        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='grupos' %}">Continuar</a>
+      {% elif seccion == 'contacto' %}
+        <div class="wizard-cols">
+          <form method="post">{% csrf_token %}<h3>Agregar teléfono</h3>{{ form.as_p }}<button name="accion" value="telefono" class="primary">Guardar teléfono</button></form>
+          <form method="post">{% csrf_token %}<h3>Agregar correo</h3>{{ form2.as_p }}<button name="accion" value="correo" class="primary">Guardar correo</button></form>
+        </div>
+        <h3>Registrados</h3><ul>{% for x in ctx.contactos.telefonos %}<li>{{ x.codigo_pais }} {{ x.codigo_area_operador }} {{ x.numero }}</li>{% endfor %}{% for x in ctx.contactos.correos %}<li>{{ x.correo }}</li>{% endfor %}</ul>
+        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='territorio' %}">Continuar</a>
+      {% elif seccion == 'grupos' %}
+        <form method="post">{% csrf_token %}{{ form.as_p }}<button class="primary">Agregar grupo</button></form>
+        <ul>{% for x in ctx.grupos %}<li>{{ x.descripcion }} <form method="post" action="{% url 'registro_publico_grupo_quitar' token=token gid=x.id_grupo %}" class="inline">{% csrf_token %}<button class="danger">Quitar</button></form></li>{% endfor %}</ul>
+        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='finalizar' %}">Continuar</a>
+      {% elif seccion == 'finalizar' %}
+        {% if ctx.finalizado %}
+          <div class="note"><b>Registro completado</b><small>El registro de esta persona quedó finalizado.</small></div>
+        {% else %}
+          <form method="post">{% csrf_token %}<button class="primary full">Finalizar registro</button></form>
+        {% endif %}
+      {% else %}
+        <form method="post" id="wizard-form">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <div class="buttons"><button class="primary" name="accion" value="guardar">Guardar y continuar</button></div>
+        </form>
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+{% if seccion == 'territorio' %}
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const form=document.getElementById('wizard-form'); if(!form)return;
+  ['id_paisId','id_estadoId','id_ciudadId','id_municipioId','id_parroquiaId','id_sectorId'].forEach(function(id){
+    const el=document.getElementById(id); if(!el)return;
+    el.addEventListener('change',function(){
+      const action=document.createElement('input'); action.type='hidden'; action.name='accion'; action.value='catalogo'; form.appendChild(action); form.submit();
+    });
+  });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -57,14 +57,14 @@ def persona_nueva(request):
  try:nacs=api.get('/catalogos-v4/nacionalidades')
  except ApiError:nacs=[]
  ven=next((str(x['id_nacionalidad_catalogo']) for x in nacs if str(x.get('codigo','')).strip().upper()=='VE'),next((str(x['id_nacionalidad_catalogo']) for x in nacs),''))
- f=IdentificacionForm(request.POST or None,initial={'nacionalidadCatalogoId':ven},nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'))
+ f=IdentificacionInicialForm(request.POST or None,initial={'nacionalidadCatalogoId':ven},nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'))
  if request.method=='POST' and f.is_valid():
   api=SiraApi(request);d=payload_persona(f.cleaned_data)
   try:
    existe=api.get('/personas/buscar',{'documento':d['documentoNumero'],'paisEmisorId':d['paisEmisorId'],'tipoDocumentoId':d['tipoDocumentoId']})
    if existe.get('existe'):
     pid=existe['persona']['id_persona'];messages.info(request,'La persona ya existe. Se abrió su perfil para edición.');return redirect('persona_editar',pid=pid)
-   r=api.post('/personas',d);pid=r['idPersona'];messages.success(request,'Identificación guardada. Continúe con el perfil.');return redirect('persona_editar',pid=pid)
+   d.update({'primerNombre':None,'segundoNombre':None,'primerApellido':None,'segundoApellido':None,'aliasApodo':None,'fechaNacimiento':None,'nacionalidadId':None,'sexoId':None,'referidoId':None});r=api.post('/personas',d);pid=r['idPersona'];api.post(f'/electoral/consultas/persona/{pid}',{'nacionalidad':'V'});messages.success(request,'Identificación guardada y consulta electoral ejecutada.');return redirect('persona_electoral',pid=pid)
   except ApiError as e:messages.error(request,str(e))
  return render(request,'core/persona_form.html',{'form':f,'modo':'crear','paso':1})
 
@@ -180,9 +180,33 @@ def invitaciones(request):
  return render(request,'core/invitaciones.html',{'form':f,'rows':rows,'generated':generated})
 
 def registro_publico(request,token):
- try:inv=SiraApi(request).post('/publico/invitaciones/validar',{'token':token})
+ api=SiraApi(request)
+ try:inv=api.post('/publico/invitaciones/validar',{'token':token})
  except ApiError as e:return render(request,'core/registro_publico.html',{'error':str(e)})
- return render(request,'core/registro_publico.html',{'inv':inv,'token':token})
+ if not request.session.get('captcha_publico'):_nuevo_captcha_publico(request)
+
+ try:codigos=api.get('/publico/invitaciones/codigos-telefonicos')
+ except ApiError:codigos=[]
+ f=RegistroPublicoInicialForm(request.POST or None,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']} · {x['descripcion']}") for x in codigos])
+ resultado=None
+ if request.method=='POST' and f.is_valid():
+  if f.cleaned_data['captcha'].upper()!=request.session.get('captcha_publico',''):
+   messages.error(request,'Código de seguridad incorrecto.');_nuevo_captcha_publico(request)
+  else:
+   try:
+    payload={k:v for k,v in f.cleaned_data.items() if k!='captcha'};payload['token']=token
+    resultado=api.post('/publico/invitaciones/iniciar',payload)
+    request.session['registro_publico_token']=token;request.session['registro_publico_persona_id']=resultado['personaId'];request.session['registro_publico_uso_id']=resultado.get('usoId');request.session['registro_publico_resultado']=resultado;request.session.pop('captcha_publico',None)
+   except ApiError as e:messages.error(request,str(e));_nuevo_captcha_publico(request)
+ return render(request,'core/registro_publico.html',{'inv':inv,'token':token,'form':f,'resultado':resultado})
+
+def _nuevo_captcha_publico(request):
+ code="".join(random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(5));request.session['captcha_publico']=code;return code
+
+def captcha_publico_imagen(request):
+ code=request.session.get('captcha_publico') or _nuevo_captcha_publico(request);img=Image.new('RGB',(220,70),'#eef6fb');d=ImageDraw.Draw(img)
+ for _ in range(12):d.line((random.randint(0,220),random.randint(0,70),random.randint(0,220),random.randint(0,70)),fill='#8bb8d8',width=1)
+ d.text((38,18),code,fill='#083b72',font=ImageFont.load_default(size=28));buf=BytesIO();img.save(buf,'PNG');return HttpResponse(buf.getvalue(),content_type='image/png')
 
 @login_required
 def persona_academico(request,pid):
@@ -191,9 +215,18 @@ def persona_academico(request,pid):
  except ApiError as e:messages.error(request,str(e));return redirect('persona_residencia',pid=pid)
  def cat(ep,idk):return choices(api.get('/catalogos-v4/'+ep),idk,'descripcion')
  c={'niveles':cat('niveles','id_nivel'),'especialidades':cat('especialidades','id_especialidad'),'honores':cat('honores','id_honor'),'disponibilidades':cat('disponibilidades','id_disponibilidad'),'modalidades':cat('modalidades','id_modalidad')}
- initial={'nivelId':d.get('id_nivel'),'titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')}
+ initial={'nivelId':d.get('id_nivel'),'titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'titulo2':d.get('titulo_2'),'especialidad2Id':d.get('id_especialidad_2'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')}
  f=AcademicoForm(request.POST or None,initial=initial,c=c)
- if request.method=='POST' and f.is_valid():api.put(f'/personas/{pid}/academico',f.cleaned_data);messages.success(request,'Datos académicos guardados.');return redirect('persona_grupos',pid=pid)
+ if request.method=='POST' and f.is_valid():
+  try:
+   api.put(f'/personas/{pid}/academico',f.cleaned_data)
+   messages.success(request,'Datos académicos guardados.')
+   er=api.get(f'/electoral/persona/{pid}')
+   if er.get('existe') and er.get('registro',{}).get('indicador_registro_existente')=='N':
+    return redirect('persona_electoral_declaracion',pid=pid)
+   return redirect('persona_grupos',pid=pid)
+  except ApiError as e:
+   messages.error(request,str(e))
  return render(request,'core/persona_academico.html',{'p':p,'form':f,'pid':pid,'paso':6})
 @login_required
 def persona_grupos(request,pid):
@@ -229,3 +262,72 @@ def grupo_eliminar(request,gid):
   try:SiraApi(request).delete(f'/grupos/{gid}');messages.success(request,'Grupo eliminado.')
   except ApiError as e:messages.error(request,str(e))
  return redirect('grupos_admin')
+
+
+@login_required
+def persona_electoral(request,pid):
+ api=SiraApi(request)
+ try:
+  p=api.get(f'/personas/{pid}')
+  if request.method=='POST' and request.POST.get('accion')=='consultar':
+   data=api.post(f'/electoral/consultas/persona/{pid}',{'nacionalidad':'V'})
+  else:
+   actual=api.get(f'/electoral/persona/{pid}')
+   if actual.get('existe'):
+    r=actual.get('registro',{});data={'indicadorRegistroExistente':r.get('indicador_registro_existente'),'nombres':r.get('nombres_fuente'),'apellidos':r.get('apellidos_fuente'),'mensajePantalla':'La consulta de datos aquí presentada puede estar o no actualizada con el CNE.','datosElectorales':{'estado':r.get('estado'),'municipio':r.get('municipio'),'parroquia':r.get('parroquia'),'centroElectoral':r.get('centro_electoral')}}
+   else:data=None
+ except ApiError as e:messages.error(request,str(e));data=None;p={}
+ return render(request,'core/electoral.html',{'p':p,'pid':pid,'r':data,'paso':2})
+
+@login_required
+def persona_electoral_declaracion(request,pid):
+ api=SiraApi(request);actual=api.get(f'/electoral/persona/{pid}');p=api.get(f'/personas/{pid}');f=ElectoralDeclaracionForm(request.POST or None)
+ if request.method=='POST' and f.is_valid():api.post(f'/electoral/persona/{pid}/declaracion',f.cleaned_data);messages.success(request,'Declaración electoral guardada y marcada para revisión.');return redirect('persona_grupos',pid=pid)
+ return render(request,'core/electoral_declaracion.html',{'p':p,'pid':pid,'actual':actual.get('registro',{}),'form':f})
+
+
+PUBLIC_STEPS=['identificacion','personales','contacto','territorio','academico','electoral','grupos','finalizar']
+def registro_publico_paso(request,token,seccion):
+ if seccion not in PUBLIC_STEPS:return redirect('registro_publico_paso',token=token,seccion='identificacion')
+ api=SiraApi(request)
+ try:ctx=api.get(f"/publico/invitaciones/{token}/contexto?usoId={request.session.get('registro_publico_uso_id','')}")
+ except ApiError as e:return render(request,'core/publico_asistente.html',{'error':str(e),'token':token,'seccion':seccion,'steps':PUBLIC_STEPS})
+ form=form2=None;catalogos={}
+ try:
+  if seccion=='personales':
+   ns=api.get('/publico/invitaciones/catalogos/nacionalidades');p=ctx['persona'];initial={'paisEmisorId':p.get('id_pais_emisor'),'tipoDocumentoId':p.get('id_tipo_documento'),'documentoNumero':p.get('documento_numero'),'primerNombre':p.get('primer_nombre'),'segundoNombre':p.get('segundo_nombre'),'primerApellido':p.get('primer_apellido'),'segundoApellido':p.get('segundo_apellido'),'aliasApodo':p.get('alias_apodo'),'fechaNacimiento':p.get('fecha_nacimiento'),'nacionalidadCatalogoId':p.get('id_nacionalidad_catalogo'),'consentimientoDatos':True};form=IdentificacionForm(request.POST or None,initial=initial,nacionalidades=choices(ns,'id_nacionalidad_catalogo','descripcion'))
+   if request.method=='POST' and form.is_valid():api.put(f'/publico/invitaciones/{token}/personales?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='contacto')
+  elif seccion=='contacto':
+   tipos=api.get('/publico/invitaciones/tipos-contacto');codigos=api.get('/publico/invitaciones/codigos-telefonicos');form=TelefonoForm(request.POST or None,tipos=choices(tipos,'id_tipo_contacto','descripcion'),codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']} · {x['descripcion']}") for x in codigos]);form2=CorreoForm(request.POST or None,prefix='correo')
+   if request.method=='POST':
+    if request.POST.get('accion')=='telefono' and form.is_valid():api.post(f'/publico/invitaciones/{token}/telefono?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='contacto')
+    if request.POST.get('accion')=='correo' and form2.is_valid():api.post(f'/publico/invitaciones/{token}/correo?usoId={request.session.get("registro_publico_uso_id","")}',form2.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='contacto')
+  elif seccion=='territorio':
+   g=ctx.get('residencia') or {};src=request.POST if request.method=='POST' else g
+   def vv(n,o):return src.get(n) or src.get(o) or ''
+   ids={'paisId':vv('paisId','id_pais'),'estadoId':vv('estadoId','id_estado'),'ciudadId':vv('ciudadId','id_ciudad'),'municipioId':vv('municipioId','id_municipio'),'parroquiaId':vv('parroquiaId','id_parroquia'),'tipoSectorId':vv('tipoSectorId','id_tipo_sector_geografico'),'sectorId':vv('sectorId','id_sector_geografico'),'codigoPostalId':vv('codigoPostalId','id_codigo_postal')}
+   pais=api.get('/publico/invitaciones/geografia/paises');tipsec=api.get('/publico/invitaciones/geografia/tipos-sector');est=api.get('/publico/invitaciones/geografia/estados',{'paisId':ids['paisId']}) if ids['paisId'] else [];ciu=api.get('/publico/invitaciones/geografia/ciudades',{'estadoId':ids['estadoId']}) if ids['estadoId'] else [];mun=api.get('/publico/invitaciones/geografia/municipios',{'ciudadId':ids['ciudadId']}) if ids['ciudadId'] else [];par=api.get('/publico/invitaciones/geografia/parroquias',{'municipioId':ids['municipioId']}) if ids['municipioId'] else [];sec=api.get('/publico/invitaciones/geografia/sectores',{'estadoId':ids['estadoId'],'ciudadId':ids['ciudadId'],'municipioId':ids['municipioId'],'parroquiaId':ids['parroquiaId'],'tipoSectorId':ids['tipoSectorId']}) if ids['tipoSectorId'] else [];cp=api.get('/publico/invitaciones/geografia/codigos-postales',{'sectorId':ids['sectorId']}) if ids['sectorId'] else []
+   ch={'paisId':choices(pais,'id_pais','desc_pais'),'estadoId':choices(est,'id_estado','desc_estado'),'ciudadId':choices(ciu,'id_ciudad','desc_ciudad'),'municipioId':choices(mun,'id_municipio','desc_municipio'),'parroquiaId':choices(par,'id_parroquia','desc_parroquia'),'tipoSectorId':choices(tipsec,'id_tipo_sector_geografico','desc_tipo_sector_geografico'),'sectorId':choices(sec,'id_sector_geografico','desc_sector_geografico'),'codigoPostalId':choices(cp,'id_codigo_postal','codigo_postal')}
+   initial={**ids,'direccionComplementaria':src.get('direccionComplementaria') or g.get('direccion_complementaria','')};form=ResidenciaForm(request.POST or None,initial=initial,choices=ch)
+   if request.method=='POST' and request.POST.get('accion')=='guardar' and form.is_valid():api.put(f'/publico/invitaciones/{token}/territorio?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='academico')
+  elif seccion=='academico':
+   d=ctx.get('academico') or {};c={'niveles':choices(api.get('/publico/invitaciones/catalogos/niveles'),'id_nivel','descripcion'),'especialidades':choices(api.get('/publico/invitaciones/catalogos/especialidades'),'id_especialidad','descripcion'),'honores':choices(api.get('/publico/invitaciones/catalogos/honores'),'id_honor','descripcion'),'disponibilidades':choices(api.get('/publico/invitaciones/catalogos/disponibilidades'),'id_disponibilidad','descripcion'),'modalidades':choices(api.get('/publico/invitaciones/catalogos/modalidades'),'id_modalidad','descripcion')};initial={'nivelId':d.get('id_nivel'),'titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'titulo2':d.get('titulo_2'),'especialidad2Id':d.get('id_especialidad_2'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')};form=AcademicoForm(request.POST or None,initial=initial,c=c)
+   if request.method=='POST' and form.is_valid():api.put(f'/publico/invitaciones/{token}/academico?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='electoral')
+  elif seccion=='grupos':
+   form=GrupoPersonaForm(request.POST or None);form.fields['grupoId'].choices=choices(ctx.get('catalogoGrupos',[]),'id_grupo','descripcion')
+   if request.method=='POST' and form.is_valid():api.post(f"/publico/invitaciones/{token}/grupos/{form.cleaned_data['grupoId']}?usoId={request.session.get('registro_publico_uso_id','')}",{});return redirect('registro_publico_paso',token=token,seccion='grupos')
+  elif seccion=='finalizar' and request.method=='POST':api.post(f'/publico/invitaciones/{token}/finalizar?usoId={request.session.get("registro_publico_uso_id","")}',{});ctx['finalizado']=True
+ except ApiError as e:messages.error(request,str(e))
+ return render(request,'core/publico_asistente.html',{'token':token,'seccion':seccion,'steps':PUBLIC_STEPS,'ctx':ctx,'form':form,'form2':form2})
+def registro_publico_grupo_quitar(request,token,gid):
+ if request.method=='POST':SiraApi(request).delete(f"/publico/invitaciones/{token}/grupos/{gid}?usoId={request.session.get('registro_publico_uso_id','')}")
+ return redirect('registro_publico_paso',token=token,seccion='grupos')
+
+
+def registro_publico_salir(request,token):
+ api=SiraApi(request);uso=request.session.get('registro_publico_uso_id')
+ if request.method=='POST' and uso:
+  try:api.post(f'/publico/invitaciones/{token}/finalizar?usoId={uso}',{})
+  except ApiError as e:messages.error(request,str(e));return redirect('registro_publico_paso',token=token,seccion='finalizar')
+ for k in ('registro_publico_token','registro_publico_persona_id','registro_publico_uso_id','registro_publico_resultado'):request.session.pop(k,None)
+ return render(request,'core/publico_salida.html')
