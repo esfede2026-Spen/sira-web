@@ -31,4 +31,4 @@ if not EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 else:
     EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend')
-# Reloaded with active Google App Password for live SMTP
+# Reloaded with Victoria sender and updated footer

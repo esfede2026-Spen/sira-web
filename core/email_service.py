@@ -17,9 +17,9 @@ def enviar_correo_bienvenida(request, datos_persona, token=None):
         return False
 
     destinatario = str(destinatario).strip()
-    remitente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'sira.admin01@gmail.com')
+    remitente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Victoria <sira.admin01@gmail.com>')
     if not remitente or remitente == 'webmaster@localhost':
-        remitente = 'sira.admin01@gmail.com'
+        remitente = 'Victoria <sira.admin01@gmail.com>'
 
     # Extracción de parámetros
     p_nom = datos_persona.get('primerNombre') or datos_persona.get('primer_nombre') or ''
@@ -83,8 +83,11 @@ Le agradecemos nuevamente su registro y la confianza depositada en este proyecto
 Esperamos contar con su experiencia, conocimientos y participación en las distintas iniciativas que se desarrollen dentro de la Red de Personas SIRA.
 
 Atentamente,
-Equipo SIRA
-Sistema Inteligente de Registro Activo
+Equipo Victoria
+Sistema Inteligente de Registro Activo · by WTogether
+
+Victoria by WTogether 2.0 · Tecnología desarrollada por Infosoft, C.A.
+Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gmail.com para: {destinatario}
 """
 
     # Versión HTML enriquecida corporativa
@@ -111,7 +114,7 @@ Sistema Inteligente de Registro Activo
 <body>
   <div class="container">
     <div class="header">
-      <h1>Victoria · SIRA</h1>
+      <h1>Victoria</h1>
       <p>Sistema Inteligente de Registro Activo · by WTogether</p>
     </div>
     <div class="content">
@@ -141,12 +144,12 @@ Sistema Inteligente de Registro Activo
       <p><a href="{url_cancelar}" class="btn btn-secondary">&rarr; Solicitar cancelación de participación</a></p>
 
       <p style="margin-top: 28px;">Atentamente,<br>
-      <strong>Equipo SIRA</strong><br>
-      <span style="color: #64748b; font-size: 13px;">Sistema Inteligente de Registro Activo</span></p>
+      <strong>Equipo Victoria</strong><br>
+      <span style="color: #64748b; font-size: 13px;">Sistema Inteligente de Registro Activo · by WTogether</span></p>
     </div>
     <div class="footer">
       <strong>Victoria by WTogether 2.0</strong> · Tecnología desarrollada por Infosoft, C.A.<br>
-      Mensaje automático generado para: {destinatario}
+      Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gmail.com para: {destinatario}
     </div>
   </div>
 </body>
