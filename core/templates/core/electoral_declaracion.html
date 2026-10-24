@@ -1,1 +1,53 @@
-{% extends 'core/base.html' %}{% block title %}Registro electoral no encontrado · SIRA{% endblock %}{% block content %}<div class="wizard"><b>P08</b><div><h1>Registro electoral no encontrado</h1><p>{{p.primer_nombre}} {{p.primer_apellido}}</p></div></div><nav class="profile-tabs v41"><a href="{% url 'persona_editar' pid %}">Identificación</a><a class="active" href="{% url 'persona_electoral' pid %}">Registro electoral</a><a href="{% url 'persona_contacto' pid %}">Contacto</a><a href="{% url 'persona_residencia' pid %}">Territorio</a><a href="{% url 'persona_academico' pid %}">Datos académicos</a><a href="{% url 'persona_grupos' pid %}">Grupos</a></nav><section class="card"><div class="note"><b>Edición controlada</b><small>La consulta se conserva en SIRA. La declaración quedará sujeta a revisión.</small></div><form method="post">{% csrf_token %}{{form.as_p}}<div class="buttons"><a class="secondary" href="{% url 'persona_academico' pid %}">Regresar</a><button class="primary">Guardar y continuar</button></div></form></section>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Registro electoral no encontrado · Victoria{% endblock %}
+{% block content %}
+<div class="wizard">
+  <b>P08</b>
+  <div>
+    <h1>Registro electoral no encontrado</h1>
+    <p>{{p.primer_nombre}} {{p.primer_apellido}} · Documento {{p.documento_numero}}</p>
+  </div>
+</div>
+
+<nav class="profile-tabs v41">
+  <a href="{% url 'persona_editar' pid %}">Identificación</a>
+  <a class="active" href="{% url 'persona_electoral' pid %}">Registro electoral</a>
+  <a href="{% url 'persona_contacto' pid %}">Contacto</a>
+  <a href="{% url 'persona_residencia' pid %}">Territorio</a>
+  <a href="{% url 'persona_academico' pid %}">Datos académicos</a>
+  <a href="{% url 'persona_grupos' pid %}">Grupos</a>
+</nav>
+
+<section class="card sprint2-card">
+  <div class="note" style="background: #edf6f8; border-left: 5px solid #42afd0; padding: 1rem 1.25rem; border-radius: 8px; margin-bottom: 1.5rem;">
+    <b style="color: #06396f; display: block; margin-bottom: 0.25rem;">Edición controlada</b>
+    <small style="color: #556877;">La consulta se conserva en Victoria. La declaración quedará sujeta a revisión.</small>
+  </div>
+  <form method="post">
+    {% csrf_token %}
+    <div class="sprint2-grid-12">
+      <div class="field-sm field-group">
+        <label for="{{ form.estado.id_for_label }}">Estado electoral:</label>
+        {{ form.estado }}
+      </div>
+      <div class="field-sm field-group">
+        <label for="{{ form.municipio.id_for_label }}">Municipio electoral:</label>
+        {{ form.municipio }}
+      </div>
+      <div class="field-sm field-group">
+        <label for="{{ form.parroquia.id_for_label }}">Parroquia electoral:</label>
+        {{ form.parroquia }}
+      </div>
+      <div class="field-xl field-group">
+        <label for="{{ form.centro_electoral.id_for_label }}">Centro de votación:</label>
+        {{ form.centro_electoral }}
+      </div>
+    </div>
+    <div class="buttons" style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+      <a class="secondary" href="{% url 'persona_electoral' pid %}" style="background: #eef4f9; color: #06396f; border-radius: 8px; padding: 0.65rem 1.35rem; font-weight: 600; text-decoration: none;">Regresar</a>
+      <button class="primary" type="submit" style="background: #075b9d; color: #fff; border: none; border-radius: 8px; padding: 0.65rem 1.35rem; font-weight: 700; cursor: pointer;">Guardar y continuar</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

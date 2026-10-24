@@ -1,0 +1,10 @@
+En el <head> de la plantilla base:
+{% load static %}
+<link rel="stylesheet" href="{% static 'wtogether/css/wtogether.css' %}">
+
+En la navegación pública y móvil agregar enlaces a:
+{% url 'quienes_somos' %}
+{% url 'contactanos' %}
+
+En Administración agregar enlace a:
+{% url 'cancelaciones_admin' %}

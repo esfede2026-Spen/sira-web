@@ -1,1 +1,70 @@
-{% extends 'core/base.html' %}{% block title %}Grupos · SIRA{% endblock %}{% block content %}<div class="wizard"><b>P10</b><div><h1>Grupos</h1><p>{{p.primer_nombre}} {{p.primer_apellido}} · Puede pertenecer a uno o más grupos.</p></div></div><nav class="profile-tabs v41"><a href="{% url 'persona_editar' pid %}">Identificación</a><a href="{% url 'persona_contacto' pid %}">Contacto</a><a href="{% url 'persona_residencia' pid %}">Territorio</a><a href="{% url 'persona_academico' pid %}">Datos académicos</a><a href="{% url 'persona_electoral' pid %}">Registro electoral</a><a href="{% url 'persona_grupos' pid %}">Grupos</a></nav><section class="card"><form method="post">{% csrf_token %}{{form.as_p}}<button class="primary">Agregar grupo</button></form><ul class="list">{% for x in rows %}<li><span>{{x.descripcion}}</span><form method="post" action="{% url 'persona_grupo_quitar' pid x.id_grupo %}">{% csrf_token %}<button class="danger mini">Retirar</button></form></li>{% empty %}<li>No tiene grupos asociados.</li>{% endfor %}</ul></section><div class="buttons"><a class="secondary" href="{% url 'persona_academico' pid %}">Regresar</a><a class="primary" href="{% url 'personas' %}">Finalizar</a></div>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Grupos · Victoria{% endblock %}
+{% block content %}
+<div class="wizard">
+  <b>P10</b>
+  <div>
+    <h1>Grupos</h1>
+    <p>{{ p.primer_nombre }} {{ p.primer_apellido }} · Adscripción y participación en grupos</p>
+  </div>
+</div>
+
+<nav class="profile-tabs v41">
+  <a href="{% url 'persona_editar' pid %}">Identificación</a>
+  <a href="{% url 'persona_electoral' pid %}">Registro electoral</a>
+  <a href="{% url 'persona_contacto' pid %}">Contacto</a>
+  <a href="{% url 'persona_residencia' pid %}">Territorio</a>
+  <a href="{% url 'persona_academico' pid %}">Datos académicos</a>
+  <a class="active" href="{% url 'persona_grupos' pid %}">Grupos</a>
+</nav>
+
+<section class="card sprint2-card">
+  <div class="note">
+    <b>Pertenencia a grupos</b>
+    <small>Puede asociar a la persona a uno o más grupos listados, o ingresar un grupo adicional en mayúsculas.</small>
+  </div>
+
+  <form method="post" class="sprint2-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="sprint2-grid-12">
+      <div class="field-l">
+        <label for="{{ form.grupoId.id_for_label }}">{{ form.grupoId.label }}</label>
+        {{ form.grupoId }}
+        {% if form.grupoId.errors %}<div class="field-error-text">{{ form.grupoId.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="field-l">
+        <label for="{{ form.otroGrupo.id_for_label }}"><strong>{{ form.otroGrupo.label }}</strong></label>
+        {{ form.otroGrupo }}
+        {% if form.otroGrupo.errors %}<div class="field-error-text">{{ form.otroGrupo.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div style="margin-top: 1rem; display: flex; justify-content: flex-start;">
+      <button class="primary btn-compact" type="submit" style="min-width: 160px; max-width: 220px;">Guardar grupo</button>
+    </div>
+  </form>
+
+  <h3 style="margin-top: 2rem; color: #06396f; border-bottom: 2px solid #e1edf6; padding-bottom: 0.5rem;">Grupos asociados</h3>
+  <ul class="list">
+    {% for x in rows %}
+      <li>
+        <span><strong>{{ x.descripcion }}</strong> <small style="color: #687d98;">(Asociado el {{ x.fecha_desde|slice:":10" }})</small></span>
+        <form method="post" action="{% url 'persona_grupo_quitar' pid x.id_grupo %}" class="inline">
+          {% csrf_token %}
+          <button class="danger mini" type="submit">Retirar</button>
+        </form>
+      </li>
+    {% empty %}
+      <li style="color: #687d98;">No tiene grupos asignados aún.</li>
+    {% endfor %}
+  </ul>
+</section>
+
+<div class="buttons">
+  <a class="secondary" href="{% url 'persona_academico' pid %}">Regresar</a>
+  <a class="primary" href="{% url 'personas' %}">Finalizar</a>
+</div>
+{% endblock %}

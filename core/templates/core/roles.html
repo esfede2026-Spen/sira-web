@@ -1,1 +1,168 @@
-{% extends 'core/base.html' %}{% block title %}Roles · SIRA{% endblock %}{% block content %}<div class="head"><div><span>Seguridad</span><h1>Roles y permisos</h1></div></div><div class="table"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Permisos</th><th>Acciones</th></tr></thead><tbody>{% for x in rows %}<tr><td>{{x.codigo}}</td><td>{{x.nombre}}</td><td>{% if x.es_sistema == 'S' %}Sistema{% else %}Configurable{% endif %}</td><td>{{x.permisos}}</td><td><a href="{% url 'rol_permisos' x.id_rol %}">Permisos</a></td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Roles y permisos · Victoria{% endblock %}
+{% block content %}
+
+<!-- Encabezado con Icono y Descripción -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div class="header-with-icon">
+    <div class="circle-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+    </div>
+    <div>
+      <h1 style="font-size: 1.85rem; font-weight: 800; color: #06396f; margin: 0 0 0.25rem 0;">Roles y permisos</h1>
+      <p style="font-size: 0.9rem; color: #64748b; margin: 0;">Defina los roles del sistema y gestione sus permisos de acceso.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tarjeta Principal con Filtros y Tabla -->
+<div class="card sprint2-card" style="padding: 1.5rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); margin-bottom: 2rem;">
+  
+  <!-- Barra de Filtros y Búsqueda -->
+  <div class="filter-toolbar">
+    <div class="search-box-wrap">
+      <span class="search-icon">
+        <svg style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </span>
+      <input type="text" id="rol-search" placeholder="Buscar rol..." onkeyup="filtrarRoles()">
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.45rem;">
+      <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Tipo:</span>
+      <select id="filtro-tipo" class="filter-select" onchange="filtrarRoles()">
+        <option value="">Todos</option>
+        <option value="Sistema">Sistema</option>
+        <option value="Configurable">Configurable</option>
+      </select>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.45rem;">
+      <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Estado:</span>
+      <select id="filtro-estado-rol" class="filter-select" onchange="filtrarRoles()">
+        <option value="">Todos</option>
+        <option value="Activo">Activo</option>
+        <option value="Inactivo">Inactivo</option>
+      </select>
+    </div>
+
+    <div style="margin-left: auto;">
+      <a href="{% url 'usuarios' %}" class="primary" style="background: #0057a8 !important; padding: 0.6rem 1.35rem; font-size: 0.9rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 8px;">
+        Ver usuarios
+      </a>
+    </div>
+  </div>
+
+  <!-- Vista Tabla para Escritorio / Tableta -->
+  <div class="table-responsive-desktop" style="border: 1px solid #e2edf6; border-radius: 10px; overflow: hidden;">
+    <table class="clean-table" id="tabla-roles">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th style="text-align: center;">Permisos</th>
+          <th style="text-align: center;">Usuarios</th>
+          <th style="text-align: center;">Estado</th>
+          <th style="text-align: center; width: 140px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for x in rows %}
+          <tr class="fila-rol" data-tipo="{% if x.es_sistema == 'S' %}Sistema{% else %}Configurable{% endif %}" data-estado="{% if x.activo == 'N' %}Inactivo{% else %}Activo{% endif %}" data-texto="{{ x.codigo }} {{ x.nombre }}">
+            <td style="font-weight: 700; color: #0f172a;">{{ x.codigo }}</td>
+            <td style="color: #334155; font-weight: 600;">{{ x.nombre }}</td>
+            <td style="color: #475569;">
+              {% if x.es_sistema == 'S' %}Sistema{% else %}Configurable{% endif %}
+            </td>
+            <td style="text-align: center; font-weight: 700; color: #075b9d;">{{ x.permisos|default:'0' }}</td>
+            <td style="text-align: center; color: #64748b;">—</td>
+            <td style="text-align: center;">
+              {% if x.activo == 'N' %}
+                <span class="pill-badge pill-badge-red">Inactivo</span>
+              {% else %}
+                <span class="pill-badge pill-badge-green">Activo</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: inline-flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                <a href="{% url 'rol_permisos' x.id_rol %}" style="color: #075b9d; font-weight: 700; font-size: 0.88rem; text-decoration: none; background: #e0f2fe; padding: 0.25rem 0.65rem; border-radius: 6px;">
+                  Permisos
+                </a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: #94a3b8; padding: 2rem;">No hay roles configurados.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pie de Tabla con Paginación -->
+    <div class="table-pagination-footer">
+      <div>Mostrando 1 - {{ rows|length }} de {{ rows|length }} registros</div>
+      <div class="pagination-controls">
+        <button class="pagination-btn" type="button">&lt;</button>
+        <button class="pagination-btn active" type="button">1</button>
+        <button class="pagination-btn" type="button">&gt;</button>
+      </div>
+      <div>
+        <select class="filter-select" style="min-height: 2rem !important; padding: 0.2rem 1.8rem 0.2rem 0.6rem !important; font-size: 0.8rem !important;">
+          <option>10 por página</option>
+          <option>25 por página</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista Móvil en Tarjetas -->
+  <div class="cards-mobile-view">
+    {% for x in rows %}
+      <div style="background: #ffffff; border: 1px solid #dbe6ef; border-radius: 12px; padding: 1.15rem; margin-bottom: 0.85rem; box-shadow: 0 2px 6px rgba(6,62,115,0.04);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.65rem;">
+          <div>
+            <h3 style="margin: 0; color: #06396f; font-size: 1.1rem; font-weight: 800;">{{ x.nombre }}</h3>
+            <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">{{ x.codigo }}</span>
+          </div>
+          {% if x.activo == 'N' %}
+            <span class="pill-badge pill-badge-red">Inactivo</span>
+          {% else %}
+            <span class="pill-badge pill-badge-green">Activo</span>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.88rem; color: #334155; margin-bottom: 0.85rem; display: flex; flex-direction: column; gap: 0.25rem;">
+          <div><strong style="color: #64748b;">Tipo:</strong> {% if x.es_sistema == 'S' %}Sistema{% else %}Configurable{% endif %}</div>
+          <div><strong style="color: #64748b;">Permisos:</strong> {{ x.permisos|default:'0' }}</div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
+          <a href="{% url 'rol_permisos' x.id_rol %}" style="color: #075b9d; font-weight: 700; font-size: 0.88rem; text-decoration: none; background: #e0f2fe; padding: 0.35rem 0.85rem; border-radius: 6px;">
+            Configurar permisos
+          </a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<script>
+function filtrarRoles() {
+  const q = document.getElementById('rol-search').value.toLowerCase();
+  const tipo = document.getElementById('filtro-tipo').value;
+  const est = document.getElementById('filtro-estado-rol').value;
+  const filas = document.querySelectorAll('.fila-rol');
+  filas.forEach(f => {
+    const texto = f.getAttribute('data-texto').toLowerCase();
+    const t = f.getAttribute('data-tipo');
+    const e = f.getAttribute('data-estado');
+    const coincideTexto = !q || texto.includes(q);
+    const coincideTipo = !tipo || t === tipo;
+    const coincideEstado = !est || e === est;
+    f.style.display = (coincideTexto && coincideTipo && coincideEstado) ? '' : 'none';
+  });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,7 @@
+Agregar al final de sira/settings.py:
+from wtogether_settings import *
+
+Agregar en TEMPLATES[0]['OPTIONS']['context_processors']:
+core.context_processors.wtogether_brand.wtogether_brand
+
+Asegurar que requests esté en requirements.txt.

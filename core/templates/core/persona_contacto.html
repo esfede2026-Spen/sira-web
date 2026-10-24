@@ -1,1 +1,366 @@
-{% extends 'core/base.html' %}{% block title %}Contacto · SIRA{% endblock %}{% block content %}<div class="wizard"><b>P05</b><div><h1>Contacto</h1><p>{{p.primer_nombre}} {{p.primer_apellido}}</p></div></div><nav class="profile-tabs v41"><a href="{% url 'persona_editar' pid %}">Identificación</a><a href="{% url 'persona_contacto' pid %}">Contacto</a><a href="{% url 'persona_residencia' pid %}">Territorio</a><a href="{% url 'persona_academico' pid %}">Datos académicos</a><a href="{% url 'persona_electoral' pid %}">Registro electoral</a><a href="{% url 'persona_grupos' pid %}">Grupos</a></nav><div class="two"><section class="card"><h2>Correo electrónico</h2><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="correo">{{correo_form.as_p}}<button class="primary">Agregar correo</button></form><ul class="list">{% for x in data.correos %}<li><span>{{x.correo}} {% if x.principal == 'S' %}<em>Principal</em>{% endif %}</span><form method="post" action="{% url 'contacto_borrar' pid 'correo' x.id_persona_correo %}">{% csrf_token %}<button class="mini danger">Retirar</button></form></li>{% empty %}<li>Sin correos.</li>{% endfor %}</ul></section><section class="card"><h2>Teléfono</h2><form method="post">{% csrf_token %}<input type="hidden" name="accion" value="telefono">{{telefono_form.as_p}}<button class="primary">Agregar teléfono</button></form><ul class="list">{% for x in data.telefonos %}<li><span>{{x.codigo_area_operador}}-{{x.numero}} · {{x.desc_tipo_contacto}}</span><form method="post" action="{% url 'contacto_borrar' pid 'telefono' x.id_persona_telefono %}">{% csrf_token %}<button class="mini danger">Retirar</button></form></li>{% empty %}<li>Sin teléfonos.</li>{% endfor %}</ul></section></div><div class="buttons"><a class="secondary" href="{% url 'persona_editar' pid %}">Regresar</a><a class="primary" href="{% url 'persona_residencia' pid %}">Continuar a territorio</a></div>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Contacto · Victoria{% endblock %}
+{% block content %}
+
+<!-- Header con P05 y Callout Informativo Superior -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.75rem; flex-wrap: wrap; gap: 1.25rem;">
+  <div class="wizard" style="margin-bottom: 0;">
+    <b>P05</b>
+    <div>
+      <h1>Contacto</h1>
+      <p style="text-transform: uppercase;">{{ p.primer_nombre }} {{ p.primer_apellido }}</p>
+    </div>
+  </div>
+  
+  <div class="info-callout" style="max-width: 490px; align-self: center;">
+    <span class="info-callout-icon">i</span>
+    <span style="font-size: 0.86rem; line-height: 1.4;">
+      Aquí puede registrar sus correos electrónicos y números de contacto. Indique cuál es su correo principal, teléfono principal y si utiliza WhatsApp.
+    </span>
+  </div>
+</div>
+
+<!-- Tabs de Navegación del Perfil -->
+<nav class="profile-tabs v41">
+  <a href="{% url 'persona_editar' pid %}">Identificación</a>
+  <a class="active" href="{% url 'persona_contacto' pid %}">Contacto</a>
+  <a href="{% url 'persona_residencia' pid %}">Territorio</a>
+  <a href="{% url 'persona_academico' pid %}">Datos académicos</a>
+  <a href="{% url 'persona_electoral' pid %}">Registro electoral</a>
+  <a href="{% url 'persona_grupos' pid %}">Grupos</a>
+</nav>
+
+<!-- Bloque de 2 Tarjetas: Correo electrónico y Teléfono -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+  
+  <!-- Tarjeta 1: Correo electrónico -->
+  <section class="card sprint2-card" style="padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; gap: 1rem;">
+        <div class="header-with-icon">
+          <div class="circle-icon">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.2rem 0;">Correo electrónico</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Registre sus direcciones de correo electrónico.</p>
+          </div>
+        </div>
+        <button type="button" class="primary" onclick="document.getElementById('modal-agregar-correo').style.display='block'" style="background: #0057a8 !important; padding: 0.55rem 1.15rem; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+          <span>+</span> Agregar correo
+        </button>
+      </div>
+
+      <!-- Formulario Desplegable para Agregar Correo -->
+      <div id="modal-agregar-correo" style="display: {% if correo_form.errors %}block{% else %}none{% endif %}; background: #f8fafc; border: 1px solid #dbe6ef; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <strong style="color: #06396f; font-size: 0.95rem;">Nuevo correo electrónico</strong>
+          <button type="button" onclick="document.getElementById('modal-agregar-correo').style.display='none'" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer;">×</button>
+        </div>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="correo">
+          <div style="margin-bottom: 0.85rem;">
+            <label style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.3rem;">Dirección de correo:</label>
+            {{ correo_form.correo }}
+            {% if correo_form.correo.errors %}<div style="color: #dc2626; font-size: 0.82rem; margin-top: 0.25rem;">{{ correo_form.correo.errors.0 }}</div>{% endif %}
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label class="check-inline" style="font-size: 0.88rem; color: #06396f;">
+              {{ correo_form.principal }} Marcar como correo principal
+            </label>
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" onclick="document.getElementById('modal-agregar-correo').style.display='none'" class="secondary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Cancelar</button>
+            <button type="submit" class="primary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Guardar correo</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tabla de Correos -->
+      <div style="border: 1px solid #e2edf6; border-radius: 10px; overflow: hidden; margin-bottom: 1.25rem;">
+        <table class="clean-table">
+          <thead>
+            <tr>
+              <th style="width: 55%;">Correo electrónico</th>
+              <th style="width: 25%; text-align: center;">Principal</th>
+              <th style="width: 20%; text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for x in data.correos %}
+              <tr>
+                <td style="font-weight: 600; color: #0f172a;">{{ x.correo }}</td>
+                <td style="text-align: center;">
+                  {% if x.principal == 'S' %}
+                    <span class="pill-badge pill-badge-green">Principal</span>
+                  {% else %}
+                    <span style="color: #94a3b8;">—</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: center;">
+                  <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                    <form method="post" action="{% url 'contacto_borrar' pid 'correo' x.id_persona_correo %}" style="margin: 0;" onsubmit="return confirm('¿Retirar este correo?');">
+                      {% csrf_token %}
+                      <button type="submit" class="action-btn action-btn-delete" title="Eliminar correo">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="3" style="text-align: center; color: #94a3b8; padding: 1.5rem;">No hay correos registrados.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Nota Informativa Inferior -->
+    <div class="info-callout" style="background: #eef6fc; border-radius: 8px; padding: 0.75rem 1rem; margin-top: auto;">
+      <span class="info-callout-icon" style="width: 20px; height: 20px; font-size: 0.78rem;">i</span>
+      <span style="font-size: 0.82rem; color: #06396f; line-height: 1.35;">
+        Solo puede definir un correo principal. El correo principal se utilizará para notificaciones y recuperación de acceso.
+      </span>
+    </div>
+  </section>
+
+  <!-- Tarjeta 2: Teléfono -->
+  <section class="card sprint2-card" style="padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; gap: 1rem;">
+        <div class="header-with-icon">
+          <div class="circle-icon">
+            <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.2rem 0;">Teléfono</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Registre sus números de teléfono de contacto.</p>
+          </div>
+        </div>
+        <button type="button" class="primary" onclick="document.getElementById('modal-agregar-telefono').style.display='block'" style="background: #0057a8 !important; padding: 0.55rem 1.15rem; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.35rem; white-space: nowrap;">
+          <span>+</span> Agregar teléfono
+        </button>
+      </div>
+
+      <!-- Formulario Desplegable para Agregar Teléfono -->
+      <div id="modal-agregar-telefono" style="display: {% if telefono_form.errors %}block{% else %}none{% endif %}; background: #f8fafc; border: 1px solid #dbe6ef; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+          <strong style="color: #06396f; font-size: 0.95rem;">Nuevo número de teléfono</strong>
+          <button type="button" onclick="document.getElementById('modal-agregar-telefono').style.display='none'" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer;">×</button>
+        </div>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="telefono">
+          <div class="sprint2-grid-12" style="margin-bottom: 0.85rem;">
+            <div class="field-l field-group">
+              <label for="{{ telefono_form.tipoContactoId.id_for_label }}">{{ telefono_form.tipoContactoId.label }}</label>
+              {{ telefono_form.tipoContactoId }}
+              {% if telefono_form.tipoContactoId.errors %}<div class="field-error-text">{{ telefono_form.tipoContactoId.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="field-l field-group">
+              <label for="{{ telefono_form.extension.id_for_label }}">{{ telefono_form.extension.label }}</label>
+              {{ telefono_form.extension }}
+              {% if telefono_form.extension.errors %}<div class="field-error-text">{{ telefono_form.extension.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="field-l field-group phone-code-cell">
+              <label class="phone-code-label" for="{{ telefono_form.codigoPais.id_for_label }}">Código:</label>
+              <div class="phone-code-inputs">
+                {{ telefono_form.codigoPais }}
+                {{ telefono_form.codigoArea }}
+                <datalist id="lista_codigos_area_tel">
+                  <option value="414"></option>
+                  <option value="424"></option>
+                  <option value="412"></option>
+                  <option value="422"></option>
+                  <option value="416"></option>
+                  <option value="426"></option>
+                </datalist>
+              </div>
+              {% if telefono_form.codigoArea.errors %}<div class="field-error-text">{{ telefono_form.codigoArea.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="field-l field-group phone-number-cell">
+              <label for="{{ telefono_form.numero.id_for_label }}">Número:</label>
+              {{ telefono_form.numero }}
+              {% if telefono_form.numero.errors %}<div class="field-error-text">{{ telefono_form.numero.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="field-xl field-group" style="display: flex; flex-direction: row; gap: 1.5rem; margin-top: 0.25rem;">
+              <label class="check-inline">{{ telefono_form.usaWhatsapp }} {{ telefono_form.usaWhatsapp.label }}</label>
+              <label class="check-inline">{{ telefono_form.principal }} {{ telefono_form.principal.label }}</label>
+            </div>
+            {{ telefono_form.codigoTelefonicoId }}
+          </div>
+          <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+            <button type="button" onclick="document.getElementById('modal-agregar-telefono').style.display='none'" class="secondary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Cancelar</button>
+            <button type="submit" class="primary" style="padding: 0.45rem 1rem; font-size: 0.85rem;">Guardar teléfono</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Tabla de Teléfonos -->
+      <div style="border: 1px solid #e2edf6; border-radius: 10px; overflow-x: auto; margin-bottom: 1.25rem;">
+        <table class="clean-table" style="min-width: 580px;">
+          <thead>
+            <tr>
+              <th>Tipo</th>
+              <th style="text-align: center;">Código país</th>
+              <th style="text-align: center;">Código área</th>
+              <th>Número</th>
+              <th style="text-align: center;">Ext.</th>
+              <th style="text-align: center;">Principal</th>
+              <th style="text-align: center;">WhatsApp</th>
+              <th style="text-align: center;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for x in data.telefonos %}
+              <tr>
+                <td style="font-weight: 600; color: #0f172a;">{% if x.desc_tipo_contacto %}{{ x.desc_tipo_contacto }}{% else %}Móvil{% endif %}</td>
+                <td style="text-align: center; color: #475569;">{{ x.codigo_pais|default:'+58' }}</td>
+                <td style="text-align: center; color: #475569;">{{ x.codigo_area_operador }}</td>
+                <td style="font-weight: 700; color: #0f172a;">{{ x.numero }}</td>
+                <td style="text-align: center; color: #94a3b8;">{{ x.extension|default:'—' }}</td>
+                <td style="text-align: center;">
+                  {% if x.principal == 'S' %}
+                    <span class="pill-badge pill-badge-green">Principal</span>
+                  {% else %}
+                    <span style="color: #94a3b8;">—</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: center;">
+                  {% if x.usa_whatsapp == 'S' %}
+                    <span class="pill-badge pill-badge-green">Sí</span>
+                  {% else %}
+                    <span style="color: #94a3b8;">—</span>
+                  {% endif %}
+                </td>
+                <td style="text-align: center;">
+                  <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                    <form method="post" action="{% url 'contacto_borrar' pid 'telefono' x.id_persona_telefono %}" style="margin: 0;" onsubmit="return confirm('¿Retirar este teléfono?');">
+                      {% csrf_token %}
+                      <button type="submit" class="action-btn action-btn-delete" title="Eliminar teléfono">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="8" style="text-align: center; color: #94a3b8; padding: 1.5rem;">No hay teléfonos registrados.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Nota Informativa Inferior -->
+    <div class="info-callout" style="background: #eef6fc; border-radius: 8px; padding: 0.75rem 1rem; margin-top: auto;">
+      <span class="info-callout-icon" style="width: 20px; height: 20px; font-size: 0.78rem;">i</span>
+      <span style="font-size: 0.82rem; color: #06396f; line-height: 1.35;">
+        Solo puede definir un teléfono principal y, si aplica, un número con WhatsApp. Puede registrar números nacionales e internacionales.
+      </span>
+    </div>
+  </section>
+
+</div>
+
+<!-- Tarjeta de Redes Sociales -->
+<section class="card sprint2-card" style="padding: 1.75rem; margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem; gap: 1rem; flex-wrap: wrap;">
+    <div class="header-with-icon">
+      <div class="circle-icon">
+        <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+      </div>
+      <div>
+        <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.2rem 0;">Redes sociales</h2>
+        <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Registre sus cuentas y perfiles en redes sociales.</p>
+      </div>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+      {% for r in redes_list %}
+        {% if r.valor %}
+          <span class="pill-badge pill-badge-blue" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">
+            <b>{{ r.tipo }}:</b> {{ r.valor }}
+          </span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="accion" value="redes">
+    <div class="sprint2-grid-12" style="gap: 1rem;">
+      <div class="field-sm field-group">
+        <label for="{{ redes_form.facebook.id_for_label }}">Facebook:</label>
+        {{ redes_form.facebook }}
+      </div>
+      <div class="field-sm field-group">
+        <label for="{{ redes_form.instagram.id_for_label }}">Instagram:</label>
+        {{ redes_form.instagram }}
+      </div>
+      <div class="field-sm field-group">
+        <label for="{{ redes_form.youtube.id_for_label }}">YouTube:</label>
+        {{ redes_form.youtube }}
+      </div>
+      <div class="field-sm field-group">
+        <label for="{{ redes_form.xTwitter.id_for_label }}">X (Twitter):</label>
+        {{ redes_form.xTwitter }}
+      </div>
+    </div>
+    <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+      <button type="submit" class="primary" style="background: #0057a8 !important; padding: 0.55rem 1.35rem; font-size: 0.88rem; font-weight: 700;">
+        Guardar redes sociales
+      </button>
+    </div>
+  </form>
+</section>
+
+<!-- Tarjeta Inferior Ancho Completo: Formato de Teléfono -->
+<section class="card sprint2-card" style="padding: 1.5rem 1.75rem; margin-bottom: 2rem;">
+  <div class="header-with-icon" style="margin-bottom: 0.75rem;">
+    <div class="circle-icon" style="width: 38px; height: 38px;">
+      <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+    </div>
+    <div>
+      <h3 style="font-size: 1.15rem; font-weight: 800; color: #06396f; margin: 0 0 0.2rem 0;">Formato de teléfono</h3>
+      <p style="font-size: 0.88rem; color: #64748b; margin: 0;">Seleccione el código de país, ingrese el código de área y luego el número, sin incluir el cero.</p>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 2.5rem; align-items: center; flex-wrap: wrap; margin-left: 3.4rem; font-size: 0.88rem; color: #475569;">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <span style="font-weight: 600;">Ejemplo (Venezuela):</span>
+      <span class="pill-badge pill-badge-blue">+58</span>
+      <span class="pill-badge pill-badge-blue">412</span>
+      <span class="pill-badge pill-badge-blue">4523692</span>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+      <span style="font-weight: 600;">Ejemplo (Internacional):</span>
+      <span class="pill-badge pill-badge-blue">+1</span>
+      <span class="pill-badge pill-badge-blue">305</span>
+      <span class="pill-badge pill-badge-blue">1234567</span>
+    </div>
+  </div>
+</section>
+
+<!-- Botones de Acción Finales -->
+<div style="display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
+  <a class="secondary" href="{% url 'persona_editar' pid %}" style="background: #ffffff !important; border: 1px solid #d0e0ed; color: #06396f !important; padding: 0.75rem 1.75rem; border-radius: 8px; font-weight: 700; text-decoration: none;">
+    Cancelar
+  </a>
+  <a class="primary" href="{% url 'persona_residencia' pid %}" style="background: #0057a8 !important; padding: 0.75rem 1.75rem; border-radius: 8px; font-weight: 700; text-decoration: none;">
+    Guardar cambios
+  </a>
+</div>
+
+{% if codigos_catalogo %}
+{{ codigos_catalogo|json_script:"sira-codigos-catalogo" }}
+{% endif %}
+{% endblock %}

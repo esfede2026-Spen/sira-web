@@ -1,0 +1,738 @@
+/* ==========================================================================
+   CDC 2.2 - Estándar Responsive Sprint 2 (Victoria by WTogether)
+   12 Columnas en Escritorio, 2 Columnas en Tableta, 1 Columna en Móvil
+   ========================================================================== */
+
+/* 1. Grilla de 12 Columnas para Formularios Sprint 2 */
+.sprint2-grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 1.15rem 1rem;
+  width: 100%;
+  align-items: end;
+}
+
+.sprint2-grid-12 .field-xs {
+  grid-column: span 1;
+}
+.sprint2-grid-12 .field-s {
+  grid-column: span 2;
+}
+.sprint2-grid-12 .field-sm {
+  grid-column: span 3;
+}
+.sprint2-grid-12 .field-m {
+  grid-column: span 4;
+}
+.sprint2-grid-12 .field-l {
+  grid-column: span 6;
+}
+.sprint2-grid-12 .field-xl {
+  grid-column: 1 / -1;
+}
+
+/* Campos funcionales específicos */
+.sprint2-grid-12 .field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.sprint2-grid-12 label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--navy, #06396f);
+  margin-bottom: 0.2rem;
+}
+
+.sprint2-grid-12 input,
+.sprint2-grid-12 select,
+.sprint2-grid-12 textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  border: 1px solid #c8d8e6;
+  border-radius: 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: #ffffff;
+  font-size: 0.95rem;
+  color: var(--ink, #102745);
+  box-sizing: border-box;
+}
+
+.sprint2-grid-12 input:focus,
+.sprint2-grid-12 select:focus,
+.sprint2-grid-12 textarea:focus {
+  outline: 3px solid rgba(18, 106, 165, 0.2);
+  border-color: #126aa5;
+}
+
+/* Tarjeta y formulario unificado */
+.sprint2-card {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 1.5rem 1.75rem;
+  box-shadow: 0 0.5rem 1.75rem rgba(6, 62, 115, 0.07);
+  margin-bottom: 1.5rem;
+}
+
+/* Selector de fecha con botón de calendario */
+.date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.date-input-wrapper input {
+  padding-right: 2.5rem;
+}
+
+.btn-calendar-trigger {
+  position: absolute;
+  right: 0.5rem;
+  background: transparent;
+  border: none;
+  font-size: 1.15rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  color: #075b9d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.btn-calendar-trigger:hover {
+  background: #eef6fb;
+}
+
+/* Consentimiento */
+.consentimiento-row,
+.consentimiento-box {
+  background: #f2f7fc;
+  border: 1px solid #d5e4f2;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1.15rem;
+}
+
+.check-inline {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  cursor: pointer;
+  font-weight: 600;
+  color: #06396f;
+}
+
+.check-inline input[type="checkbox"] {
+  width: 1.25rem !important;
+  height: 1.25rem !important;
+  min-height: 1.25rem !important;
+  flex: 0 0 1.25rem;
+  margin: 0;
+  cursor: pointer;
+}
+
+/* Badges de estado */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  border-radius: 1rem;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badge-success {
+  background: #dff3e9;
+  color: #17664f;
+}
+
+.badge-danger {
+  background: #ffe0e0;
+  color: #8c2020;
+}
+
+.badge-info {
+  background: #e1f1fb;
+  color: #075b9d;
+}
+
+.badge-neutral {
+  background: #e8eef4;
+  color: #536b80;
+}
+
+/* Encabezados y botones principales */
+.sprint2-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.head-actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.btn-nuevo-action {
+  background: #178a5e !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  padding: 0.65rem 1.25rem;
+  border-radius: 0.65rem;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  box-shadow: 0 3px 10px rgba(23, 138, 94, 0.25);
+}
+
+.btn-nuevo-action:hover {
+  background: #13734e !important;
+}
+
+.btn-compact {
+  padding: 0.65rem 1.25rem !important;
+  min-height: 2.75rem !important;
+}
+
+/* Vistas de tarjeta para móvil */
+.cards-mobile-view {
+  display: none;
+}
+
+/* Submenú de Personas y Navegación */
+.nav-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nav-group:hover menu,
+.nav-group.submenu-open menu {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.top menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background: #ffffff;
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  min-width: 175px;
+  box-shadow: 0 12px 32px rgba(6, 28, 51, 0.22);
+  z-index: 1050;
+  list-style: none;
+}
+
+.top menu::before {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 0;
+  right: 0;
+  height: 12px;
+}
+
+.top menu a {
+  color: #102745 !important;
+  padding: 0.65rem 0.85rem !important;
+  font-size: 0.88rem !important;
+  font-weight: 600 !important;
+  border-radius: 0.45rem;
+  text-decoration: none;
+  display: block;
+}
+
+.top menu a:hover {
+  background: #eef6fb !important;
+  color: #075b9d !important;
+}
+
+.top nav a.exit {
+  border: none !important;
+}
+
+/* ==========================================================================
+   2. Responsive: Tableta (max-width: 1024px)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .sprint2-grid-12 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+  .sprint2-grid-12 .field-xs,
+  .sprint2-grid-12 .field-s,
+  .sprint2-grid-12 .field-sm,
+  .sprint2-grid-12 .field-m,
+  .sprint2-grid-12 .field-l {
+    grid-column: span 1;
+  }
+  .sprint2-grid-12 .field-xl {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ==========================================================================
+   3. Responsive: Móvil (max-width: 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .sprint2-grid-12 {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .sprint2-grid-12 .field-xs,
+  .sprint2-grid-12 .field-s,
+  .sprint2-grid-12 .field-sm,
+  .sprint2-grid-12 .field-m,
+  .sprint2-grid-12 .field-l,
+  .sprint2-grid-12 .field-xl {
+    grid-column: 1;
+  }
+
+  /* Ocultar tabla y mostrar tarjetas en móvil */
+  .table-responsive-desktop {
+    display: none !important;
+  }
+
+  .cards-mobile-view {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .user-card-item,
+  .role-card-item {
+    background: #ffffff;
+    border: 1px solid #dbe6ef;
+    border-radius: 0.85rem;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(6, 62, 115, 0.05);
+  }
+
+  .user-card-head,
+  .role-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .user-card-head h3,
+  .role-card-head h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #06396f;
+  }
+
+  .user-card-head small {
+    display: block;
+    color: #536b80;
+    margin-top: 0.2rem;
+  }
+
+  .user-card-body,
+  .role-card-body {
+    font-size: 0.88rem;
+    color: #102745;
+    margin-bottom: 0.75rem;
+  }
+
+  .user-card-foot,
+  .role-card-foot {
+    display: flex;
+    gap: 0.65rem;
+    align-items: center;
+    border-top: 1px solid #eef3f8;
+    padding-top: 0.65rem;
+    flex-wrap: wrap;
+  }
+
+  .user-card-foot a,
+  .role-card-foot a {
+    color: #075b9d;
+    font-size: 0.88rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+}
+
+/* ==========================================================================
+   4. Visual Alignment Sprint 2 (image7.png, image10.png, image11.png)
+   ========================================================================== */
+.wizard {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1.25rem !important;
+  margin-bottom: 1.75rem !important;
+}
+
+.wizard > b {
+  width: 58px !important;
+  height: 58px !important;
+  background: #ffc21c !important;
+  color: #06396f !important;
+  display: grid !important;
+  place-items: center !important;
+  font-size: 1.15rem !important;
+  font-weight: 900 !important;
+  clip-path: polygon(25% 7%, 75% 7%, 100% 50%, 75% 93%, 25% 93%, 0 50%) !important;
+  flex: 0 0 58px !important;
+}
+
+.wizard h1 {
+  font-size: 2.15rem !important;
+  font-weight: 800 !important;
+  color: #06396f !important;
+  margin: 0 !important;
+  line-height: 1.2 !important;
+}
+
+.wizard p {
+  font-size: 0.95rem !important;
+  color: #64748b !important;
+  margin: 0.35rem 0 0 0 !important;
+  font-weight: 500 !important;
+}
+
+/* Tabs v41 matching image7.png */
+.profile-tabs.v41 {
+  display: flex !important;
+  gap: 0.75rem !important;
+  flex-wrap: wrap !important;
+  margin-bottom: 1.75rem !important;
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+}
+
+.profile-tabs.v41 a {
+  background: #e1edf6 !important;
+  color: #06396f !important;
+  font-weight: 700 !important;
+  font-size: 0.92rem !important;
+  padding: 0.65rem 1.25rem !important;
+  border-radius: 8px !important;
+  text-decoration: none !important;
+  border: 1px solid transparent !important;
+  transition: all 0.18s ease-in-out !important;
+  display: inline-block !important;
+}
+
+.profile-tabs.v41 a:hover {
+  background: #d4e5f2 !important;
+  color: #075b9d !important;
+}
+
+.profile-tabs.v41 a.active {
+  background: #ffffff !important;
+  color: #06396f !important;
+  font-weight: 800 !important;
+  border: 1px solid #d0e0ed !important;
+  box-shadow: 0 2px 8px rgba(6, 57, 111, 0.08) !important;
+}
+
+/* Category kicker matching image10.png, image11.png */
+.category-kicker {
+  color: #0099cc !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 2px !important;
+  text-transform: uppercase !important;
+  display: block !important;
+  margin-bottom: 0.3rem !important;
+}
+
+/* Primary and secondary rounded buttons matching doc */
+.primary {
+  background: #075b9d !important;
+  color: #ffffff !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+}
+
+.secondary {
+  background: #eef4f9 !important;
+  color: #06396f !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+/* ==========================================================================
+   5. High-Fidelity UI Components (Contacto, Usuarios, Roles, Grupos, Invitaciones)
+   ========================================================================== */
+.header-with-icon {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.circle-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #e1f0fa;
+  color: #075b9d;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.circle-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+  padding: 0;
+}
+
+.action-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.action-btn-edit {
+  background: #eef6fc;
+  color: #075b9d;
+  border-color: #d2e4f3;
+}
+.action-btn-edit:hover {
+  background: #075b9d;
+  color: #ffffff;
+}
+
+.action-btn-delete {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+.action-btn-delete:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.action-btn-view {
+  background: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+.action-btn-view:hover {
+  background: #475569;
+  color: #ffffff;
+}
+
+.action-btn-lock {
+  background: #fef3c7;
+  color: #b45309;
+  border-color: #fde68a;
+}
+.action-btn-lock:hover {
+  background: #b45309;
+  color: #ffffff;
+}
+
+.pill-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.7rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pill-badge-green {
+  background: #dcfce7 !important;
+  color: #15803d !important;
+}
+
+.pill-badge-red {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+.pill-badge-blue {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+}
+
+.pill-badge-gray {
+  background: #f1f5f9 !important;
+  color: #64748b !important;
+}
+
+.info-callout {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: #eef6fc;
+  border-radius: 12px;
+  padding: 0.85rem 1.25rem;
+  color: #06396f;
+  font-size: 0.88rem;
+}
+
+.info-callout-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #0284c7;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.filter-toolbar {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+  padding: 0 0.25rem;
+}
+
+.search-box-wrap {
+  position: relative;
+  flex: 1 1 240px;
+}
+
+.search-box-wrap input {
+  width: 100%;
+  padding-left: 2.25rem !important;
+  min-height: 2.5rem !important;
+  border: 1px solid #c8d8e6 !important;
+  border-radius: 8px !important;
+  font-size: 0.92rem !important;
+}
+
+.search-box-wrap .search-icon {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.filter-select {
+  min-height: 2.5rem !important;
+  border: 1px solid #c8d8e6 !important;
+  border-radius: 8px !important;
+  padding: 0.4rem 2rem 0.4rem 0.85rem !important;
+  font-size: 0.9rem !important;
+  color: #334155 !important;
+  background-color: #ffffff !important;
+}
+
+.table-pagination-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.85rem 1.25rem;
+  background: #f8fafc;
+  border-top: 1px solid #eef3f8;
+  font-size: 0.85rem;
+  color: #64748b;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.pagination-btn {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.pagination-btn.active {
+  background: #075b9d !important;
+  color: #ffffff !important;
+  border-color: #075b9d !important;
+}
+
+.clean-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.clean-table thead tr {
+  background: #dbe9f4;
+}
+
+.clean-table th {
+  padding: 1rem 1.15rem;
+  color: #06396f;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-align: left;
+}
+
+.clean-table td {
+  padding: 1rem 1.15rem;
+  color: #334155;
+  font-size: 0.92rem;
+  border-bottom: 1px solid #eef3f8;
+}
+
+.clean-table tbody tr:hover td {
+  background: #f8fafc;
+}

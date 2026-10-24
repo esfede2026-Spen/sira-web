@@ -1,0 +1,2 @@
+En sira/urls.py importar include y agregar:
+path('', include('core.rutas.wtogether_urls')),

@@ -1,1 +1,301 @@
-{% extends 'core/base.html' %}{% block title %}Invitaciones · SIRA{% endblock %}{% block content %}<div class="head"><div><span>Invitaciones</span><h1>Generar enlace público</h1><p>El id_persona del referente queda vinculado internamente al token seguro.</p></div></div><div class="two"><section class="card"><form method="post">{% csrf_token %}{{form.as_p}}<button class="primary">Generar enlace y QR</button></form></section>{% if generated %}<section class="card result"><h2>Invitación generada</h2><img src="data:image/png;base64,{{generated.qr}}" alt="QR de invitación"><input value="{{generated.url}}" readonly><button class="secondary" type="button" onclick="navigator.clipboard.writeText('{{generated.url}}')">Copiar enlace</button></section>{% endif %}</div><div class="table"><table><thead><tr><th>ID</th><th>Referente</th><th>Invitado</th><th>Canal</th><th>Estado</th><th>Vence</th></tr></thead><tbody>{% for x in rows %}<tr><td>{{x.id_invitacion}}</td><td>{{x.referido_nombre}} {{x.referido_apellido}}</td><td>{{x.nombre_declarado}} {{x.apellido_declarado}}</td><td>{{x.canal}}</td><td>{{x.estado}}</td><td>{{x.fecha_vencimiento}}</td></tr>{% empty %}<tr><td colspan="6">No hay invitaciones.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Gestión de Invitaciones · Victoria{% endblock %}
+{% block content %}
+
+<!-- Encabezado de Página -->
+<div style="margin-bottom: 1.25rem;">
+  <h1 style="font-size: 1.75rem; font-weight: 800; color: #06396f; margin: 0 0 0.2rem 0;">Gestión de Invitaciones</h1>
+  <p style="font-size: 0.88rem; color: #64748b; margin: 0;">Genere enlaces de invitación para que las personas se registren o actualicen su información.</p>
+</div>
+
+<!-- Bloque Superior de 2 Tarjetas: Formulario y QR Generado -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap: 1.25rem; margin-bottom: 1.5rem; align-items: stretch;">
+  
+  <!-- Tarjeta 1: Nueva Invitación -->
+  <section class="card sprint2-card" style="padding: 1.4rem 1.6rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 4px 16px rgba(6, 57, 111, 0.04); margin-bottom: 0;">
+    <div class="header-with-icon" style="margin-bottom: 1rem;">
+      <div class="circle-icon" style="width: 36px; height: 36px;">
+        <svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+      </div>
+      <div>
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Nueva invitación</h2>
+        <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Configure el enlace de referido y su vigencia.</p>
+      </div>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="margin-bottom: 0.75rem;">
+        <label for="{{ form.referidoId.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.25rem;">Persona que invita (referente) *</label>
+        {{ form.referidoId }}
+        {% if form.referidoId.errors %}<div style="color: #dc2626; font-size: 0.8rem; margin-top: 0.2rem;">{{ form.referidoId.errors.0 }}</div>{% endif %}
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+        <div>
+          <label for="{{ form.canal.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.25rem;">Canal de envío *</label>
+          {{ form.canal }}
+        </div>
+        <div>
+          <label for="{{ form.vigenciaHoras.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.25rem;">Vigencia (horas) *</label>
+          {{ form.vigenciaHoras }}
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+        <div>
+          <label for="{{ form.nombre.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.25rem;">Nombre del invitado (opcional)</label>
+          <input type="text" name="nombre" id="{{ form.nombre.id_for_label }}" value="{{ form.nombre.value|default:'' }}" placeholder="Nombre" style="width: 100%; border: 1px solid #c8d8e6; border-radius: 8px; padding: 0.55rem 0.75rem; font-size: 0.9rem;">
+        </div>
+        <div>
+          <label for="{{ form.apellido.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.25rem;">Apellido del invitado (opcional)</label>
+          <input type="text" name="apellido" id="{{ form.apellido.id_for_label }}" value="{{ form.apellido.value|default:'' }}" placeholder="Apellido" style="width: 100%; border: 1px solid #c8d8e6; border-radius: 8px; padding: 0.55rem 0.75rem; font-size: 0.9rem;">
+        </div>
+      </div>
+
+      <div style="margin-bottom: 1.15rem;">
+        <label class="check-inline" style="font-size: 0.84rem; color: #06396f; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+          {{ form.notificarCorreo }} Notificar por correo electrónico al invitado si se especifica
+        </label>
+      </div>
+
+      <div>
+        <button type="submit" class="primary" style="background: #0057a8 !important; padding: 0.65rem 1.6rem; font-size: 0.9rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+          Generar enlace
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <!-- Tarjeta 2: Invitación Generada -->
+  <section class="card sprint2-card" style="padding: 1.4rem 1.6rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 4px 16px rgba(6, 57, 111, 0.04); margin-bottom: 0; display: flex; flex-direction: column; justify-content: flex-start; text-align: left;">
+    <div class="header-with-icon" style="margin-bottom: 1rem;">
+      <div class="circle-icon" style="width: 36px; height: 36px; background: #eef6fc;">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      </div>
+      <div>
+        <h2 style="font-size: 1.15rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Invitación generada</h2>
+        <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Comparta el enlace o descargue el código QR.</p>
+      </div>
+    </div>
+
+    {% if generated %}
+      <!-- Enlace directo -->
+      <div style="margin-bottom: 0.85rem;">
+        <label style="display: block; font-weight: 700; color: #06396f; font-size: 0.84rem; margin-bottom: 0.25rem;">Enlace directo:</label>
+        <div style="display: flex; gap: 0.45rem;">
+          <input type="text" value="{{ generated.url }}" readonly id="input-generated-url" style="flex: 1; border: 1px solid #c8d8e6; border-radius: 8px; padding: 0.5rem 0.75rem; font-size: 0.85rem; background: #f8fafc; color: #334155;">
+          <button type="button" class="primary" onclick="navigator.clipboard.writeText(document.getElementById('input-generated-url').value); alert('Enlace copiado al portapapeles');" style="background: #0057a8 !important; padding: 0.5rem 1rem; font-size: 0.82rem; white-space: nowrap; border-radius: 8px; cursor: pointer;">
+            Copiar enlace
+          </button>
+        </div>
+      </div>
+
+      <!-- QR y Detalles -->
+      <div style="display: flex; gap: 1.25rem; align-items: center; background: #f8fafc; border: 1px solid #e2edf6; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.85rem;">
+        <div style="background: #ffffff; padding: 0.5rem; border-radius: 8px; border: 1px solid #dbe6ef; flex-shrink: 0; text-align: center;">
+          <img id="qr-image" src="data:image/png;base64,{{ generated.qr }}" alt="Código QR" style="width: 100px; height: 100px; display: block; object-fit: contain;">
+          <a href="data:image/png;base64,{{ generated.qr }}" download="invitacion_qr.png" style="display: inline-block; margin-top: 0.35rem; font-size: 0.75rem; color: #0057a8; font-weight: 700; text-decoration: none;">
+            Descargar QR
+          </a>
+        </div>
+        <div style="font-size: 0.84rem; line-height: 1.45; color: #334155;">
+          <strong style="color: #06396f; display: block; margin-bottom: 0.35rem; font-size: 0.9rem;">Detalles de la invitación:</strong>
+          <div><b>Canal:</b> {{ generated.canal }}</div>
+          <div><b>Vigencia:</b> {{ generated.vigencia }} horas</div>
+          <div><b>Estado:</b> <span class="pill-badge pill-badge-green" style="font-size: 0.75rem; padding: 0.15rem 0.5rem;">{{ generated.estado }}</span></div>
+          <div><b>Referente:</b> {{ generated.referente }}</div>
+        </div>
+      </div>
+      <p style="font-size: 0.8rem; color: #64748b; margin: 0;">El enlace y el código QR permiten el registro o actualización directa de datos de la persona.</p>
+    {% else %}
+      <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem 1rem; text-align: center; flex: 1;">
+        <div class="circle-icon" style="width: 52px; height: 52px; margin-bottom: 0.75rem; background: #f0f7fd;">
+          <svg style="width: 26px; height: 26px;" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        </div>
+        <strong style="color: #06396f; font-size: 0.95rem; margin-bottom: 0.35rem;">Ningún enlace generado todavía</strong>
+        <p style="font-size: 0.84rem; color: #64748b; max-width: 320px; margin: 0;">Seleccione el referente a la izquierda y presione «Generar enlace» para visualizar aquí la URL y el código QR de invitación.</p>
+      </div>
+    {% endif %}
+  </section>
+
+</div>
+
+<!-- Tarjeta Inferior: Histórico de Invitaciones -->
+<div class="card sprint2-card" style="padding: 1.4rem 1.6rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 4px 16px rgba(6, 57, 111, 0.04); margin-bottom: 2rem;">
+  
+  <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 1rem 0;">Histórico de invitaciones</h2>
+
+  <!-- Barra de Filtros y Búsqueda -->
+  <div class="filter-toolbar" style="display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; margin-bottom: 1rem;">
+    <div class="search-box-wrap" style="flex: 1 1 240px; min-width: 200px;">
+      <span class="search-icon">
+        <svg style="width: 15px; height: 15px; stroke: currentColor; stroke-width: 2; fill: none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </span>
+      <input type="text" id="invitacion-search" placeholder="Buscar por invitado o referente..." onkeyup="filtrarInvitaciones()">
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.35rem;">
+      <select id="filtro-canal" class="filter-select" onchange="filtrarInvitaciones()">
+        <option value="">Todos los canales</option>
+        <option value="ENLACE">Enlace</option>
+        <option value="WHATSAPP">WhatsApp</option>
+        <option value="CORREO">Correo</option>
+      </select>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.35rem;">
+      <select id="filtro-estado-inv" class="filter-select" onchange="filtrarInvitaciones()">
+        <option value="">Todos los estados</option>
+        <option value="PENDIENTE">Pendiente</option>
+        <option value="UTILIZADO">Utilizado</option>
+        <option value="EXPIRADO">Expirado</option>
+      </select>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; color: #475569;">
+      <span>Desde:</span>
+      <input type="date" id="filtro-desde" class="filter-select" style="min-height: 2.2rem !important; padding: 0.2rem 0.5rem !important;" onchange="filtrarInvitaciones()">
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; color: #475569;">
+      <span>Hasta:</span>
+      <input type="date" id="filtro-hasta" class="filter-select" style="min-height: 2.2rem !important; padding: 0.2rem 0.5rem !important;" onchange="filtrarInvitaciones()">
+    </div>
+  </div>
+
+  <!-- Vista Tabla para Escritorio / Tableta -->
+  <div class="table-responsive-desktop" style="border: 1px solid #e2edf6; border-radius: 10px; overflow: hidden;">
+    <table class="clean-table" id="tabla-invitaciones">
+      <thead>
+        <tr>
+          <th style="width: 50px;">ID</th>
+          <th style="width: 100px;">Fecha</th>
+          <th>Referente</th>
+          <th>Invitado</th>
+          <th style="text-align: center; width: 90px;">Canal</th>
+          <th style="text-align: center; width: 95px;">Estado</th>
+          <th style="text-align: center; width: 95px;">Vence</th>
+          <th style="text-align: center; width: 80px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for x in rows %}
+          <tr class="fila-invitacion" data-canal="{{ x.canal }}" data-estado="{{ x.estado }}" data-fecha="{{ x.fecha_creacion|slice:':10' }}" data-texto="{{ x.id_invitacion }} {{ x.referido_nombre }} {{ x.referido_apellido }} {{ x.nombre_declarado }} {{ x.apellido_declarado }}">
+            <td style="color: #64748b; font-weight: 500;">{{ x.id_invitacion }}</td>
+            <td style="color: #64748b; font-size: 0.84rem;">{{ x.fecha_creacion|slice:':10' }}</td>
+            <td style="font-weight: 700; color: #0f172a;">{{ x.referido_nombre }} {{ x.referido_apellido }}</td>
+            <td style="color: #334155;">{{ x.nombre_declarado|default:'—' }} {{ x.apellido_declarado|default:'' }}</td>
+            <td style="text-align: center; color: #475569;">{{ x.canal }}</td>
+            <td style="text-align: center;">
+              {% if x.estado == 'UTILIZADO' %}
+                <span class="pill-badge pill-badge-green">Utilizado</span>
+              {% elif x.estado == 'PENDIENTE' %}
+                <span class="pill-badge" style="background: #fef3c7; color: #b45309;">Pendiente</span>
+              {% else %}
+                <span class="pill-badge pill-badge-red">{{ x.estado }}</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center; color: #64748b; font-size: 0.84rem;">{{ x.fecha_vencimiento|slice:':10' }}</td>
+            <td style="text-align: center;">
+              {% if x.token %}
+                <a href="/registro/{{ x.token }}/" target="_blank" style="color: #075b9d; font-weight: 700; font-size: 0.85rem; text-decoration: none;">Ver</a>
+              {% else %}
+                <span style="color: #94a3b8; font-size: 0.82rem;">—</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: #94a3b8; padding: 2rem;">No hay invitaciones generadas.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pie de Tabla con Paginación -->
+    <div class="table-pagination-footer" style="padding: 0.75rem 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; font-size: 0.84rem; color: #64748b; border-top: 1px solid #e2edf6; background: #fafcff;">
+      <div id="pagination-info">Mostrando 1 a {{ rows|length }} de {{ rows|length }} registros</div>
+      <div class="pagination-controls" style="display: flex; gap: 0.35rem;">
+        <button class="pagination-btn" type="button" style="padding: 0.25rem 0.65rem; border: 1px solid #d0e0ed; border-radius: 6px; background: #fff; cursor: pointer;">Anterior</button>
+        <button class="pagination-btn active" type="button" style="padding: 0.25rem 0.65rem; border: 1px solid #0057a8; border-radius: 6px; background: #0057a8; color: #fff; font-weight: 700;">1</button>
+        <button class="pagination-btn" type="button" style="padding: 0.25rem 0.65rem; border: 1px solid #d0e0ed; border-radius: 6px; background: #fff; cursor: pointer;">Siguiente</button>
+      </div>
+      <div>
+        <select class="filter-select" style="min-height: 1.9rem !important; padding: 0.15rem 1.6rem 0.15rem 0.5rem !important; font-size: 0.8rem !important;">
+          <option>10 por página</option>
+          <option>25 por página</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista Móvil en Tarjetas -->
+  <div class="cards-mobile-view">
+    {% for x in rows %}
+      <div style="background: #ffffff; border: 1px solid #dbe6ef; border-radius: 12px; padding: 1.15rem; margin-bottom: 0.85rem; box-shadow: 0 2px 6px rgba(6,62,115,0.04);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.65rem;">
+          <div>
+            <h3 style="margin: 0; color: #06396f; font-size: 1.05rem; font-weight: 800;">#{{ x.id_invitacion }} · {{ x.canal }}</h3>
+            <span style="font-size: 0.82rem; color: #64748b;">Referente: {{ x.referido_nombre }} {{ x.referido_apellido }}</span>
+          </div>
+          {% if x.estado == 'UTILIZADO' %}
+            <span class="pill-badge pill-badge-green">Utilizado</span>
+          {% elif x.estado == 'PENDIENTE' %}
+            <span class="pill-badge" style="background: #fef3c7; color: #b45309;">Pendiente</span>
+          {% else %}
+            <span class="pill-badge pill-badge-red">{{ x.estado }}</span>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.84rem; color: #475569; margin-bottom: 0.75rem;">
+          <div><strong>Fecha:</strong> {{ x.fecha_creacion|slice:':10' }}</div>
+          <div><strong>Invitado:</strong> {{ x.nombre_declarado|default:'—' }} {{ x.apellido_declarado|default:'' }}</div>
+          <div><strong>Vence:</strong> {{ x.fecha_vencimiento|slice:':10' }}</div>
+        </div>
+        {% if x.token %}
+        <div style="display: flex; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 0.65rem;">
+          <a href="/registro/{{ x.token }}/" target="_blank" style="color: #075b9d; font-weight: 700; font-size: 0.85rem; text-decoration: none;">Abrir enlace</a>
+        </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+</div>
+
+<script>
+function filtrarInvitaciones() {
+  const q = document.getElementById('invitacion-search').value.toLowerCase();
+  const c = document.getElementById('filtro-canal').value;
+  const e = document.getElementById('filtro-estado-inv').value;
+  const dDesde = document.getElementById('filtro-desde').value;
+  const dHasta = document.getElementById('filtro-hasta').value;
+  const filas = document.querySelectorAll('.fila-invitacion');
+  let visibles = 0;
+
+  filas.forEach(f => {
+    const texto = f.getAttribute('data-texto').toLowerCase();
+    const canal = f.getAttribute('data-canal');
+    const estado = f.getAttribute('data-estado');
+    const fecha = f.getAttribute('data-fecha') || '';
+
+    const coincideTexto = !q || texto.includes(q);
+    const coincideCanal = !c || canal === c;
+    const coincideEstado = !e || estado === e;
+    const coincideDesde = !dDesde || fecha >= dDesde;
+    const coincideHasta = !dHasta || fecha <= dHasta;
+
+    const visible = coincideTexto && coincideCanal && coincideEstado && coincideDesde && coincideHasta;
+    f.style.display = visible ? '' : 'none';
+    if (visible) visibles++;
+  });
+
+  const pInfo = document.getElementById('pagination-info');
+  if (pInfo) {
+    pInfo.textContent = `Mostrando 1 a ${visibles} de ${visibles} registros`;
+  }
+}
+</script>
+
+{% endblock %}

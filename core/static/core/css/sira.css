@@ -78,3 +78,146 @@ body:has(.login){overflow-y:auto}.login{height:min(760px,calc(100vh - 150px));mi
  .public-flow .note{padding:12px}.public-flow .note small{line-height:1.35}.public-flow footer{font-size:10px}
 }
 @media(max-width:390px){.public-flow{width:calc(100% - 12px)!important;margin:6px!important;padding:11px!important}.public-flow .public-head img{width:54px!important;height:54px!important}.public-flow .public-head h1{font-size:21px}.public-flow .wizard-body{padding:14px 12px}.public-flow dl{grid-template-columns:82px minmax(0,1fr)}}
+
+/* ==========================================================================
+   Teléfono Compuesto: Código País + Código Área + Teléfono
+   ========================================================================== */
+.phone-code-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.phone-code-label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--navy, #06396f);
+  margin-bottom: 2px;
+}
+.phone-code-inputs {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  width: 100%;
+}
+.field-cod-pais {
+  width: 110px;
+  min-width: 95px;
+  flex: 0 0 110px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border: 1px solid var(--line, #c8d8e6);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  color: #06396f;
+}
+.field-cod-area {
+  width: 95px;
+  min-width: 80px;
+  flex: 0 0 95px;
+  text-align: center;
+  font-weight: 600;
+  padding: 8px 10px;
+  border: 1px solid var(--line, #c8d8e6);
+  border-radius: 8px;
+  background: #fff;
+  color: #06396f;
+}
+.phone-number-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.phone-number-cell label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--navy, #06396f);
+  margin-bottom: 2px;
+}
+.field-telefono-num {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line, #c8d8e6);
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 500;
+}
+.field-error-text {
+  color: #c92a2a;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* Phone Form Grid for Cards (persona_contacto and publico_asistente) */
+.phone-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+.phone-form-grid .field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.phone-form-grid .field-group label {
+  display: block;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--navy, #06396f);
+}
+.phone-form-grid .full-width {
+  grid-column: 1 / -1;
+}
+.phone-form-grid .checkbox-row {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  padding: 6px 0;
+}
+.phone-form-grid .check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #1a3a5f;
+}
+.phone-form-grid .check-inline input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+
+@media (max-width: 760px) {
+  .phone-code-inputs {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+  .field-cod-pais {
+    flex: 1 1 50%;
+    width: auto;
+    min-width: 0;
+  }
+  .field-cod-area {
+    flex: 1 1 50%;
+    width: auto;
+    min-width: 0;
+  }
+  .phone-form-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .phone-form-grid .checkbox-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+

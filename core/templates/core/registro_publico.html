@@ -1,1 +1,385 @@
-{% extends 'core/base.html' %}{% load static %}{% block title %}Registro por invitación · SIRA{% endblock %}{% block content %}<section class="public card public-registro public-flow">{% if error %}<h1>Invitación no disponible</h1><div class="alert">{{error}}</div>{% else %}<header class="public-head"><img src="{% static 'core/img/SIRA_logo_icono.png' %}" alt="SIRA"><div><h1>Registro por invitación</h1><p>Invitación emitida por {{inv.referido_nombre}} {{inv.referido_apellido}}.</p></div></header>{% if resultado %}<div class="note"><b>Identificación y contacto registrados</b><small>Se ejecutó la consulta electoral. Continúe completando la Persona.</small></div><nav class="public-tabs"><a class="active" href="#identificacion">Identificación</a><a href="#personales">Datos personales</a><a href="#contacto">Contacto</a><a href="#territorio">Territorio</a><a href="#academico">Datos académicos</a><a href="#electoral">Registro electoral</a><a href="#grupos">Grupos</a></nav><div class="public-summary"><section id="identificacion"><h2>Identificación</h2><dl><dt>Nombres</dt><dd>{{resultado.electoral.nombres|default:'—'}}</dd><dt>Apellidos</dt><dd>{{resultado.electoral.apellidos|default:'—'}}</dd><dt>Documento</dt><dd>{{resultado.electoral.documentoConsultado|default:'—'}}</dd></dl></section><section id="contacto"><h2>Contacto inicial</h2><dl><dt>Teléfono</dt><dd>{{resultado.telefono}}</dd><dt>Correo</dt><dd>{{resultado.correo}}</dd><dt>Ubicación</dt><dd>{{resultado.ubicacionReferencia|default:'Pendiente de territorio'}}</dd></dl></section><section id="electoral"><h2>Registro electoral</h2><p>{% if resultado.electoral.indicadorRegistroExistente == 'S' %}Registro electoral encontrado.{% else %}Sin registro electoral disponible.{% endif %}</p></section></div><div class="buttons dual"><a class="primary" href="{% url 'registro_publico_paso' token=token seccion='identificacion' %}">Continuar registro completo</a><form method="post" action="{% url 'registro_publico_salir' token=token %}">{% csrf_token %}<button class="secondary" type="submit">Finalizar y salir ahora</button></form></div>{% else %}<div class="note compact-note"><b>Seguridad</b><small>Complete identificación, contacto y CAPTCHA para comenzar.</small></div><form method="post" class="public-form">{% csrf_token %}{{form.non_field_errors}}<div class="public-entry-grid"><div>{{form.tipoDocumentoId.as_field_group}}</div><div>{{form.documentoNumero.as_field_group}}</div><div>{{form.codigoTelefonicoId.as_field_group}}</div><div>{{form.numero.as_field_group}}</div><div>{{form.correo.as_field_group}}</div><div>{{form.ubicacion.as_field_group}}<div class="location-consent">{{form.autorizaUbicacion}} <label for="{{form.autorizaUbicacion.id_for_label}}">Autorizo ubicación</label></div></div><div class="public-captcha"><div class="captcha-box"><img src="{% url 'captcha_publico_imagen' %}?v={{request.session.captcha_publico}}" alt="Código de seguridad"><a href="">Actualizar</a></div>{{form.captcha.as_field_group}}</div><div class="consentimiento-box">{{form.consentimientoDatos.errors}}<label for="{{form.consentimientoDatos.id_for_label}}">{{form.consentimientoDatos}} <span>Acepto el uso de mis datos</span></label></div>{{form.nacionalidadCatalogoId}}</div><button class="primary full" type="submit">Continuar</button></form>{% endif %}{% endif %}</section>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Registro por Invitación · Victoria{% endblock %}
+
+{% block content %}
+<div style="max-width: 740px; margin: 0.35rem auto 1rem; padding: 0 0.75rem;">
+  
+  {% if error %}
+    <section class="card sprint2-card" style="padding: 2rem; border-radius: 12px; border: 1px solid #fee2e2; background: #fff5f5; text-align: center;">
+      <div class="circle-icon" style="width: 50px; height: 50px; background: #fee2e2; margin: 0 auto 0.85rem; color: #dc2626;">
+        <svg viewBox="0 0 24 24" style="stroke: #dc2626;"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+      </div>
+      <h1 style="font-size: 1.35rem; font-weight: 800; color: #991b1b; margin: 0 0 0.4rem 0;">Invitación no disponible</h1>
+      <p style="font-size: 0.9rem; color: #7f1d1d; margin: 0 0 1.25rem 0;">{{ error }}</p>
+      <a href="{% url 'home' %}" class="primary" style="background: #0057a8 !important; padding: 0.6rem 1.5rem; font-weight: 700; border-radius: 8px; text-decoration: none;">Ir al inicio</a>
+    </section>
+  {% else %}
+
+    <!-- Encabezado Institucional de Invitación Compacto -->
+    <header style="display: flex; align-items: center; gap: 0.85rem; margin-bottom: 0.5rem; padding: 0.55rem 1.15rem; background: #ffffff; border: 1px solid #dbe9f4; border-radius: 10px; box-shadow: 0 2px 8px rgba(6, 57, 111, 0.04);">
+      <img src="{% static 'wtogether/img/victoria_logo.png' %}" alt="Victoria" style="width: 40px; height: 40px; object-fit: contain; flex-shrink: 0;">
+      <div>
+        <div style="font-size: 1.15rem; font-weight: 800; color: #06396f; line-height: 1.15;">Victoria</div>
+        <div style="font-size: 0.76rem; color: #536b80; font-weight: 600;">Sistema Inteligente de Registro Activo <span style="opacity: 0.75; font-size: 0.68rem;">by WTogether</span></div>
+        <div style="font-size: 0.8rem; color: #0057a8; margin-top: 0.15rem; font-weight: 600;">
+          Invitación emitida por: <strong>{{ inv.referido_nombre }} {{ inv.referido_apellido }}</strong>
+        </div>
+      </div>
+    </header>
+
+    {% if resultado %}
+      <!-- Resumen Inicial de Datos Compacto -->
+      <section class="card sprint2-card" style="padding: 1.15rem 1.35rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 3px 14px rgba(6, 57, 111, 0.04); background: #ffffff;">
+        
+        <div class="header-with-icon" style="margin-bottom: 0.75rem;">
+          <div class="circle-icon" style="width: 36px; height: 36px;">
+            <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+          </div>
+          <div>
+            <h1 style="font-size: 1.18rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Resumen inicial del registro</h1>
+            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Por favor verifique los datos detectados antes de continuar con el registro completo.</p>
+          </div>
+        </div>
+
+        <form method="post" id="form-resumen" style="margin: 0;">
+          {% csrf_token %}
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.65rem; margin-bottom: 0.75rem;">
+            
+            <!-- Bloque Identificación (Editable SOLO si no se detectó en CNE) -->
+            <div style="background: #f8fafc; border: 1px solid #e2edf6; border-radius: 8px; padding: 0.75rem 0.95rem;">
+              <strong style="color: #06396f; font-size: 0.88rem; display: block; margin-bottom: 0.45rem; border-bottom: 1px solid #dbe6ef; padding-bottom: 0.25rem;">Identificación</strong>
+              <div style="font-size: 0.84rem; color: #334155; line-height: 1.5;">
+                <div style="margin-bottom: 0.35rem;"><span style="color: #64748b;">Documento:</span> <strong>{{ resultado.documentoNumero }}</strong></div>
+                
+                {% if not resultado.cneEncontrado and not resultado.electoral.centroElectoral and not resultado.electoral.registro.centro_electoral %}
+                  <div style="font-size: 0.78rem; color: #475569; font-weight: 700; margin: 0.35rem 0 0.3rem;">
+                    Nombres y apellidos (obligatorios):
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.45rem; margin-top: 0.25rem;">
+                    <div>
+                      <label style="font-size: 0.74rem; font-weight: 700; color: #06396f; display: block; margin-bottom: 2px;">Primer nombre *</label>
+                      <input type="text" name="primerNombre" value="{{ resultado.primerNombre|default:'' }}" required placeholder="Primer nombre" style="width: 100%; padding: 0.38rem 0.55rem; font-size: 0.82rem; text-transform: uppercase; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.74rem; font-weight: 700; color: #06396f; display: block; margin-bottom: 2px;">Segundo nombre</label>
+                      <input type="text" name="segundoNombre" value="{{ resultado.segundoNombre|default:'' }}" placeholder="Segundo nombre" style="width: 100%; padding: 0.38rem 0.55rem; font-size: 0.82rem; text-transform: uppercase; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.74rem; font-weight: 700; color: #06396f; display: block; margin-bottom: 2px;">Primer apellido *</label>
+                      <input type="text" name="primerApellido" value="{{ resultado.primerApellido|default:'' }}" required placeholder="Primer apellido" style="width: 100%; padding: 0.38rem 0.55rem; font-size: 0.82rem; text-transform: uppercase; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                    <div>
+                      <label style="font-size: 0.74rem; font-weight: 700; color: #06396f; display: block; margin-bottom: 2px;">Segundo apellido</label>
+                      <input type="text" name="segundoApellido" value="{{ resultado.segundoApellido|default:'' }}" placeholder="Segundo apellido" style="width: 100%; padding: 0.38rem 0.55rem; font-size: 0.82rem; text-transform: uppercase; border: 1px solid #cbd5e1; border-radius: 6px;">
+                    </div>
+                  </div>
+                {% else %}
+                  <div><span style="color: #64748b;">Nombres:</span> <strong>{{ resultado.primerNombre }}{% if resultado.segundoNombre %} {{ resultado.segundoNombre }}{% endif %}</strong></div>
+                  <div><span style="color: #64748b;">Apellidos:</span> <strong>{{ resultado.primerApellido }}{% if resultado.segundoApellido %} {{ resultado.segundoApellido }}{% endif %}</strong></div>
+                  <input type="hidden" name="primerNombre" value="{{ resultado.primerNombre }}">
+                  <input type="hidden" name="segundoNombre" value="{{ resultado.segundoNombre|default:'' }}">
+                  <input type="hidden" name="primerApellido" value="{{ resultado.primerApellido }}">
+                  <input type="hidden" name="segundoApellido" value="{{ resultado.segundoApellido|default:'' }}">
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Bloque Contacto -->
+            <div style="background: #f8fafc; border: 1px solid #e2edf6; border-radius: 8px; padding: 0.75rem 0.95rem;">
+              <strong style="color: #06396f; font-size: 0.88rem; display: block; margin-bottom: 0.45rem; border-bottom: 1px solid #dbe6ef; padding-bottom: 0.25rem;">Contacto inicial</strong>
+              <div style="font-size: 0.84rem; color: #334155; line-height: 1.5;">
+                <div><span style="color: #64748b;">Teléfono:</span> <strong>{{ resultado.telefono|default:'—' }}</strong></div>
+                <div><span style="color: #64748b;">Correo:</span> <strong>{{ resultado.correo|default:'—' }}</strong></div>
+                <div><span style="color: #64748b;">Ubicación:</span> <strong>{{ resultado.ubicacionReferencia|default:'No especificada' }}</strong></div>
+              </div>
+            </div>
+
+            <!-- Bloque Electoral -->
+            <div style="background: #f8fafc; border: 1px solid #e2edf6; border-radius: 8px; padding: 0.75rem 0.95rem; grid-column: 1 / -1;">
+              <strong style="color: #06396f; font-size: 0.88rem; display: block; margin-bottom: 0.45rem; border-bottom: 1px solid #dbe6ef; padding-bottom: 0.25rem;">Registro electoral oficial</strong>
+              <div style="font-size: 0.84rem; color: #334155; line-height: 1.5;">
+                {% if resultado.cneEncontrado or resultado.electoral.centroElectoral or resultado.electoral.registro.centro_electoral %}
+                  <div style="margin-bottom: 0.25rem;">
+                    <span class="pill-badge pill-badge-green" style="font-size: 0.76rem;">Registro electoral verificado</span>
+                  </div>
+                  <div><span style="color: #64748b;">Centro de votación:</span> <strong>{{ resultado.electoral.centroElectoral|default:resultado.electoral.registro.centro_electoral }}</strong></div>
+                  <div><span style="color: #64748b;">Ubicación:</span> <strong>{{ resultado.electoral.parroquia|default:resultado.electoral.registro.parroquia }}, {{ resultado.electoral.municipio|default:resultado.electoral.registro.municipio }}, {{ resultado.electoral.estado|default:resultado.electoral.registro.estado }}</strong></div>
+                {% else %}
+                  <div style="color: #64748b; font-style: italic;">
+                    No se detectó inscripción en el padrón electoral oficial o los datos no coincidieron con la consulta.
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Aviso oficial CNE -->
+          <div class="info-callout" style="background: #eef6fc; border-radius: 8px; padding: 0.45rem 0.85rem; margin-bottom: 0.85rem;">
+            <span class="info-callout-icon" style="width: 20px; height: 20px; font-size: 0.78rem;">i</span>
+            <span style="font-size: 0.8rem; color: #06396f; line-height: 1.35;">
+              <strong>Nota informativa:</strong> Los datos aquí presentados pudieran estar o no actualizados en relación con la base de datos del CNE.
+            </span>
+          </div>
+
+          <!-- Botones de Acción: Cancelar (Rojo) + Regresar (Amarillo) + Salir ahora (Azul) + Continuar (Verde) en UNA SOLA LÍNEA -->
+          <div style="display: flex; flex-wrap: nowrap; justify-content: space-between; align-items: center; gap: 0.45rem; width: 100%; margin-top: 0.75rem;">
+            <div style="display: flex; flex-wrap: nowrap; gap: 0.45rem; align-items: center;">
+              <button type="submit" name="accion" value="cancelar" formnovalidate class="secondary" style="background: #dc2626 !important; color: #ffffff !important; border: none; padding: 0.55rem 0.85rem; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+                ✕ Cancelar
+              </button>
+              <button type="submit" name="accion" value="regresar" formnovalidate class="secondary" style="background: #ca8a04 !important; color: #ffffff !important; border: none; padding: 0.55rem 0.85rem; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+                ← Regresar
+              </button>
+            </div>
+
+            <div style="display: flex; flex-wrap: nowrap; gap: 0.45rem; align-items: center;">
+              <button type="submit" name="accion" value="salir_ahora" class="secondary" style="background: #0057a8 !important; color: #ffffff !important; border: none; padding: 0.55rem 0.95rem; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+                Finalizar y salir ahora
+              </button>
+              <button type="submit" name="accion" value="confirmar" class="primary" style="background: #16a34a !important; color: #ffffff !important; border: none; padding: 0.55rem 1.05rem; font-size: 0.82rem; font-weight: 700; border-radius: 8px; cursor: pointer; white-space: nowrap;">
+                Continuar completo →
+              </button>
+            </div>
+          </div>
+        </form>
+
+      </section>
+
+    {% else %}
+      <!-- Formulario Inicial Compacto -->
+      <section class="card sprint2-card" style="padding: 1.15rem 1.35rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 3px 14px rgba(6, 57, 111, 0.04); background: #ffffff;">
+        
+        <div class="header-with-icon" style="margin-bottom: 0.75rem;">
+          <div class="circle-icon" style="width: 36px; height: 36px;">
+            <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+          </div>
+          <div>
+            <h1 style="font-size: 1.18rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Registro de Persona</h1>
+            <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Por favor ingrese sus datos básicos para iniciar el proceso de registro.</p>
+          </div>
+        </div>
+
+        <form method="post" id="form-registro-inicial">
+          {% csrf_token %}
+          {{ form.non_field_errors }}
+          
+          <div class="sprint2-grid-12" style="gap: 0.6rem 0.75rem; margin-bottom: 0.75rem;">
+            
+            <!-- Fila 1: Documento -->
+            <div class="field-s field-group" style="grid-column: span 5;">
+              <label for="{{ form.tipoDocumentoId.id_for_label }}">Tipo de documento *</label>
+              {{ form.tipoDocumentoId }}
+              {% if form.tipoDocumentoId.errors %}<div class="field-error-text">{{ form.tipoDocumentoId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 7;">
+              <label for="{{ form.documentoNumero.id_for_label }}">N.º de documento *</label>
+              {{ form.documentoNumero }}
+              {% if form.documentoNumero.errors %}<div class="field-error-text">{{ form.documentoNumero.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 2: Teléfono compuesto -->
+            <div class="field-s field-group phone-code-cell" style="grid-column: span 5;">
+              <label for="{{ form.codigoPais.id_for_label }}">Código *</label>
+              <div class="phone-code-inputs" style="display: flex; gap: 0.35rem;">
+                {{ form.codigoPais }}
+                {{ form.codigoArea }}
+                <datalist id="lista_codigos_area">
+                  <option value="414"></option>
+                  <option value="424"></option>
+                  <option value="412"></option>
+                  <option value="422"></option>
+                  <option value="416"></option>
+                  <option value="426"></option>
+                </datalist>
+              </div>
+              {% if form.codigoArea.errors %}<div class="field-error-text">{{ form.codigoArea.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group phone-number-cell" style="grid-column: span 7;">
+              <label for="{{ form.numero.id_for_label }}">Teléfono *</label>
+              {{ form.numero }}
+              {% if form.numero.errors %}<div class="field-error-text">{{ form.numero.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 3: Correo -->
+            <div class="field-xl field-group" style="grid-column: 1 / -1;">
+              <label for="{{ form.correo.id_for_label }}">Correo electrónico *</label>
+              {{ form.correo }}
+              {% if form.correo.errors %}<div class="field-error-text">{{ form.correo.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 4: Captcha y Código de seguridad -->
+            <div class="field-l field-group" style="grid-column: span 6;">
+              <label style="display: block; font-weight: 700; color: #06396f; font-size: 0.82rem; margin-bottom: 0.25rem;">Validación de seguridad</label>
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <img id="img-captcha-publico" src="{% url 'captcha_publico_imagen' %}?v={{ request.session.captcha_publico }}" alt="Captcha" style="border: 1px solid #c8d8e6; border-radius: 6px; height: 38px;">
+                <button type="button" onclick="document.getElementById('img-captcha-publico').src='{% url 'captcha_publico_imagen' %}?v='+Math.random()" style="background: none; border: 1px solid #d0e0ed; border-radius: 6px; padding: 0.4rem 0.6rem; color: #0057a8; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
+                  🔄 Actualizar
+                </button>
+              </div>
+            </div>
+
+            <div class="field-l field-group" style="grid-column: span 6;">
+              <label for="{{ form.captcha.id_for_label }}">Código de seguridad *</label>
+              {{ form.captcha }}
+              {% if form.captcha.errors %}<div class="field-error-text">{{ form.captcha.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 5: Consentimiento -->
+            <div class="field-xl field-group" style="grid-column: 1 / -1; margin-top: 0.15rem;">
+              <label class="check-inline" style="font-size: 0.85rem; color: #06396f; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
+                {{ form.consentimientoDatos }}
+                <span>Acepto y doy consentimiento para el uso de mis datos</span>
+              </label>
+              {% if form.consentimientoDatos.errors %}<div class="field-error-text">{{ form.consentimientoDatos.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 6: Ubicación de referencia y Autorizo ubicación con Geocodificación Inversa -->
+            <div class="field-m field-group" style="grid-column: span 8;">
+              <label for="{{ form.ubicacion.id_for_label }}">Ubicación (referencia opcional):</label>
+              {{ form.ubicacion }}
+            </div>
+
+            <div class="field-s field-group" style="grid-column: span 4; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 0.25rem;">
+              <label class="check-inline" style="font-size: 0.85rem; color: #06396f; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
+                {{ form.autorizaUbicacion }}
+                <span>Autorizo ubicación</span>
+              </label>
+            </div>
+
+            {{ form.latitud }}
+            {{ form.longitud }}
+            {{ form.nacionalidadCatalogoId }}
+            {{ form.codigoTelefonicoId }}
+          </div>
+
+          <div style="margin-top: 0.85rem;">
+            <button type="submit" class="primary full" style="width: 100%; background: #0057a8 !important; padding: 0.75rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+              Continuar
+            </button>
+          </div>
+        </form>
+
+      </section>
+    {% endif %}
+
+  {% endif %}
+</div>
+
+<!-- Script de geocodificación inversa con OpenStreetMap Nominatim -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const chkUbi = document.getElementById('{{ form.autorizaUbicacion.id_for_label }}');
+  const inputUbi = document.getElementById('{{ form.ubicacion.id_for_label }}');
+  const inputLat = document.getElementById('{{ form.latitud.id_for_label }}');
+  const inputLon = document.getElementById('{{ form.longitud.id_for_label }}');
+
+  if (chkUbi && inputUbi) {
+    chkUbi.addEventListener('change', function() {
+      if (this.checked) {
+        if (!navigator.geolocation) {
+          alert('La geolocalización no está soportada por su navegador.');
+          return;
+        }
+        inputUbi.placeholder = 'Obteniendo ubicación satelital...';
+        navigator.geolocation.getCurrentPosition(
+          function(position) {
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            if (inputLat) inputLat.value = lat;
+            if (inputLon) inputLon.value = lon;
+
+            // Geocodificación inversa con OpenStreetMap Nominatim
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1`)
+              .then(res => res.json())
+              .then(data => {
+                if (data && data.address) {
+                  const a = data.address;
+                  const barrio = a.neighbourhood || a.suburb || a.city_district || a.quarter || '';
+                  const ciudad = a.city || a.town || a.village || a.state || '';
+                  let ref = [barrio, ciudad].filter(Boolean).join(', ');
+                  if (!ref && data.display_name) {
+                    ref = data.display_name.split(',').slice(0, 3).join(', ');
+                  }
+                  if (ref) {
+                    inputUbi.value = ref;
+                  }
+                }
+              })
+              .catch(err => {
+                console.log('Error en reverse geocoding:', err);
+              })
+              .finally(() => {
+                inputUbi.placeholder = 'Sector, ciudad o referencia';
+              });
+          },
+          function(err) {
+            console.warn('Geolocalización rechazada o no disponible:', err.message);
+            inputUbi.placeholder = 'Sector, ciudad o referencia';
+          },
+          { timeout: 10000, enableHighAccuracy: false }
+        );
+      }
+    });
+  }
+
+  // Manejo de pantalla de espera (Espere mientras procesamos su solicitud)
+  var btnsConfirm = document.querySelectorAll('button[name="accion"]');
+  btnsConfirm.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var val = btn.getAttribute('value');
+      if (val === 'confirmar' || val === 'salir_ahora') {
+        var form = btn.closest('form');
+        if (form && !form.checkValidity()) {
+          return;
+        }
+        var overlay = document.getElementById('loadingOverlay');
+        if (overlay) {
+          overlay.style.display = 'flex';
+        }
+      }
+    });
+  });
+});
+</script>
+
+<!-- Modal de Espera y Procesamiento con Reloj de Arena / Spinner -->
+<div id="loadingOverlay" style="display: none; position: fixed; inset: 0; background: rgba(6, 35, 68, 0.82); backdrop-filter: blur(6px); z-index: 999999; justify-content: center; align-items: center; flex-direction: column;">
+  <div style="background: #ffffff; border-radius: 18px; padding: 2.2rem 2.5rem; text-align: center; max-width: 440px; width: 90%; box-shadow: 0 20px 50px rgba(6, 57, 111, 0.35); border: 1px solid #dbe9f4;">
+    <div style="display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; background: #eef6fc; border-radius: 50%; margin-bottom: 1.15rem; border: 2.5px solid #0057a8; box-shadow: 0 4px 14px rgba(0, 87, 168, 0.15);">
+      <span style="font-size: 2.2rem; display: inline-block; animation: girarReloj 2s infinite ease-in-out;">⏳</span>
+    </div>
+    <h3 style="margin: 0 0 0.5rem; font-size: 1.22rem; font-weight: 800; color: #06396f; letter-spacing: -0.3px;">Espere mientras procesamos su solicitud</h3>
+    <p style="margin: 0; font-size: 0.88rem; color: #64748b; line-height: 1.5;">Estamos registrando sus datos y despachando su correo de confirmación...</p>
+    <div style="margin-top: 1.35rem; height: 5px; width: 100%; background: #e2edf6; border-radius: 99px; overflow: hidden; position: relative;">
+      <div style="height: 100%; width: 45%; background: linear-gradient(90deg, #0057a8, #16a34a); border-radius: 99px; animation: moverBarra 1.5s infinite ease-in-out;"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+@keyframes girarReloj {
+  0% { transform: rotate(0deg); }
+  45% { transform: rotate(180deg); }
+  55% { transform: rotate(180deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes moverBarra {
+  0% { transform: translateX(-100%); }
+  50% { transform: translateX(120%); }
+  100% { transform: translateX(260%); }
+}
+</style>
+
+{% if codigos_catalogo %}
+{{ codigos_catalogo|json_script:"sira-codigos-catalogo" }}
+{% endif %}
+{% endblock %}
+
+{% block footer %}
+{# Omit internal system footer on public registration per UI standard #}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "core/base.html" %}
+{% load static %}
+{% block title %}Contáctanos | {{ brand.product_name }}{% endblock %}
+{% block content %}
+<section class="wt-page"><img class="wt-logo" src="{% static 'wtogether/img/victoria_logo.png' %}" alt="Victoria">
+<h1>Contáctanos</h1><p>Si necesita asistencia, desea informar una dificultad o requiere información adicional sobre Victoria, puede comunicarse con el equipo responsable.</p>
+<p><a class="wt-button" href="mailto:{{ contact_email }}">Escribir a {{ contact_email }}</a></p>
+<p class="wt-note">Por seguridad, no envíe contraseñas, códigos de acceso ni información sensible en el mensaje.</p></section>
+{% endblock %}

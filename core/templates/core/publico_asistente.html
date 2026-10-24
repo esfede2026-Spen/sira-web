@@ -1,83 +1,803 @@
 {% extends 'core/base.html' %}
 {% load static %}
-{% block title %}Registro por invitación · SIRA{% endblock %}
+{% block title %}Asistente de Registro · Victoria{% endblock %}
+
 {% block content %}
-<section class="public card public-registro public-flow">
-  <header class="public-head">
-    <img src="{% static 'core/img/SIRA_logo_icono.png' %}" alt="SIRA">
-    <div><h1>Registro por invitación</h1><p>Complete las secciones que tenga disponibles.</p></div>
-  </header>
+<div style="max-width: 1080px; margin: 1.5rem auto 3rem; padding: 0 1rem;">
+
   {% if error %}
-    <div class="alert">{{ error }}</div>
+    <section class="card sprint2-card" style="padding: 2rem; border-radius: 14px; border: 1px solid #fee2e2; background: #fff5f5; text-align: center;">
+      <h1 style="font-size: 1.4rem; font-weight: 800; color: #991b1b; margin: 0 0 0.5rem 0;">Error en el asistente</h1>
+      <p style="font-size: 0.92rem; color: #7f1d1d; margin: 0 0 1.5rem 0;">{{ error }}</p>
+      <a href="{% url 'registro_publico' token=token %}" class="primary" style="background: #0057a8 !important; padding: 0.65rem 1.75rem; font-weight: 700; border-radius: 8px; text-decoration: none;">Volver al inicio</a>
+    </section>
   {% else %}
-    <nav class="public-tabs">
-      {% for s in steps %}
-        <a class="{% if s == seccion %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion=s %}">{% if s == 'territorio' %}Dirección{% else %}{{ s|title }}{% endif %}</a>
-      {% endfor %}
-    </nav>
-    <div class="wizard-actions-top">
-      <form method="post" action="{% url 'registro_publico_salir' token=token %}">
-        {% csrf_token %}
-        <button type="submit" class="secondary">Finalizar y salir</button>
-      </form>
-    </div>
-    <div class="wizard-body">
-      <h2>{% if seccion == 'territorio' %}Dirección{% else %}{{ seccion|title }}{% endif %}</h2>
-      {% if seccion == 'identificacion' %}
-        <dl>
-          <dt>Documento</dt><dd>{{ ctx.persona.documento_numero }}</dd>
-          <dt>Nombres</dt><dd>{{ ctx.persona.primer_nombre|default_if_none:'' }} {{ ctx.persona.segundo_nombre|default_if_none:'' }}</dd>
-          <dt>Apellidos</dt><dd>{{ ctx.persona.primer_apellido|default_if_none:'' }} {{ ctx.persona.segundo_apellido|default_if_none:'' }}</dd>
-        </dl>
-        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='personales' %}">Continuar</a>
-      {% elif seccion == 'electoral' %}
-        {% if ctx.electoral.existe %}
-          <dl>
-            <dt>Estado</dt><dd>{{ ctx.electoral.registro.estado|default:'—' }}</dd>
-            <dt>Municipio</dt><dd>{{ ctx.electoral.registro.municipio|default:'—' }}</dd>
-            <dt>Parroquia</dt><dd>{{ ctx.electoral.registro.parroquia|default:'—' }}</dd>
-            <dt>Centro</dt><dd>{{ ctx.electoral.registro.centro_electoral|default:'—' }}</dd>
-          </dl>
-        {% else %}<p>No existe resultado electoral guardado.</p>{% endif %}
-        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='grupos' %}">Continuar</a>
-      {% elif seccion == 'contacto' %}
-        <div class="wizard-cols">
-          <form method="post">{% csrf_token %}<h3>Agregar teléfono</h3>{{ form.as_p }}<button name="accion" value="telefono" class="primary">Guardar teléfono</button></form>
-          <form method="post">{% csrf_token %}<h3>Agregar correo</h3>{{ form2.as_p }}<button name="accion" value="correo" class="primary">Guardar correo</button></form>
+
+    <!-- Encabezado Institucional -->
+    <header style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding: 1.15rem 1.5rem; background: #ffffff; border: 1px solid #dbe9f4; border-radius: 12px; box-shadow: 0 4px 16px rgba(6, 57, 111, 0.04); flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: 1rem;">
+        <img src="{% static 'wtogether/img/victoria_logo.png' %}" alt="Victoria" style="width: 48px; height: 48px; object-fit: contain;">
+        <div>
+          <div style="font-size: 1.25rem; font-weight: 800; color: #06396f; line-height: 1.2;">Victoria</div>
+          <div style="font-size: 0.8rem; color: #536b80; font-weight: 600;">Sistema Inteligente de Registro Activo <span style="opacity: 0.75; font-size: 0.7rem;">by WTogether</span></div>
+          <div style="font-size: 0.82rem; color: #0057a8; font-weight: 700; text-transform: uppercase; margin-top: 0.15rem;">
+            {{ ctx.persona.primer_nombre }} {{ ctx.persona.primer_apellido }} · Doc: {{ ctx.persona.documento_numero }}
+          </div>
         </div>
-        <h3>Registrados</h3><ul>{% for x in ctx.contactos.telefonos %}<li>{{ x.codigo_pais }} {{ x.codigo_area_operador }} {{ x.numero }}</li>{% endfor %}{% for x in ctx.contactos.correos %}<li>{{ x.correo }}</li>{% endfor %}</ul>
-        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='territorio' %}">Continuar</a>
-      {% elif seccion == 'grupos' %}
-        <form method="post">{% csrf_token %}{{ form.as_p }}<button class="primary">Agregar grupo</button></form>
-        <ul>{% for x in ctx.grupos %}<li>{{ x.descripcion }} <form method="post" action="{% url 'registro_publico_grupo_quitar' token=token gid=x.id_grupo %}" class="inline">{% csrf_token %}<button class="danger">Quitar</button></form></li>{% endfor %}</ul>
-        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='finalizar' %}">Continuar</a>
-      {% elif seccion == 'finalizar' %}
-        {% if ctx.finalizado %}
-          <div class="note"><b>Registro completado</b><small>El registro de esta persona quedó finalizado.</small></div><form method="post" action="{% url 'registro_publico_salir' token=token %}">{% csrf_token %}<button class="primary full" type="submit">Salir del registro</button></form>
-        {% else %}
-          <form method="post">{% csrf_token %}<button class="primary full">Finalizar registro</button></form>
-        {% endif %}
-      {% else %}
+      </div>
+      <div>
+        <form method="post" action="{% url 'registro_publico_salir' token=token %}" style="margin: 0;">
+          {% csrf_token %}
+          <button type="submit" class="secondary" style="background: #ffffff !important; border: 1px solid #d0e0ed; color: #06396f !important; padding: 0.55rem 1.25rem; font-size: 0.85rem; font-weight: 700; border-radius: 8px; cursor: pointer;">
+            Finalizar y salir
+          </button>
+        </form>
+      </div>
+    </header>
+
+    <!-- Barra de Navegación de Pasos Oficial Sprint 2 -->
+    <nav class="profile-tabs v41" style="margin-bottom: 1.75rem;">
+      <a class="{% if seccion == 'personales' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='personales' %}">Identificación</a>
+      <a class="{% if seccion == 'contacto' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='contacto' %}">Contacto</a>
+      <a class="{% if seccion == 'territorio' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='territorio' %}">Territorio</a>
+      <a class="{% if seccion == 'academico' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='academico' %}">Datos académicos</a>
+      <a class="{% if seccion == 'electoral' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='electoral' %}">Registro electoral</a>
+      <a class="{% if seccion == 'grupos' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='grupos' %}">Grupos</a>
+    </nav>
+
+    <!-- ========================================== -->
+    <!-- PASO 1: IDENTIFICACIÓN (PERSONALES) -->
+    <!-- ========================================== -->
+    {% if seccion == 'personales' %}
+      <section class="card sprint2-card" style="padding: 1.75rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); background: #ffffff;">
+        <div class="header-with-icon" style="margin-bottom: 1.5rem;">
+          <div class="circle-icon" style="width: 42px; height: 42px;">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Identificación y Perfil</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Complete sus nombres, apellidos y fecha de nacimiento.</p>
+          </div>
+        </div>
+
+        <form method="post" id="form-public-personales">
+          {% csrf_token %}
+          {{ form.paisEmisorId }}
+          {{ form.non_field_errors }}
+
+          <div class="sprint2-grid-12" style="gap: 1.15rem 1rem;">
+            
+            <!-- Fila 1: Tipo Documento (S), Nro Doc (SM), Nacionalidad (S), Sexo (XS), Fecha Nac (SM) -->
+            <div class="field-s field-group" style="grid-column: span 2;">
+              <label for="{{ form.tipoDocumentoId.id_for_label }}">Tipo doc.:</label>
+              {{ form.tipoDocumentoId }}
+              {% if form.tipoDocumentoId.errors %}<div class="field-error-text">{{ form.tipoDocumentoId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.documentoNumero.id_for_label }}">N.º de documento:</label>
+              {{ form.documentoNumero }}
+              {% if form.documentoNumero.errors %}<div class="field-error-text">{{ form.documentoNumero.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-s field-group" style="grid-column: span 2;">
+              <label for="{{ form.nacionalidadCatalogoId.id_for_label }}">Nacionalidad:</label>
+              {{ form.nacionalidadCatalogoId }}
+              {% if form.nacionalidadCatalogoId.errors %}<div class="field-error-text">{{ form.nacionalidadCatalogoId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-xs field-group" style="grid-column: span 2;">
+              <label for="{{ form.sexoId.id_for_label }}">Sexo:</label>
+              {{ form.sexoId }}
+              {% if form.sexoId.errors %}<div class="field-error-text">{{ form.sexoId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.fechaNacimiento.id_for_label }}">Fecha nac. (DD/MM/AAAA):</label>
+              <div style="display: flex; gap: 0.35rem; align-items: center;">
+                <input type="text" name="fechaNacimiento" id="{{ form.fechaNacimiento.id_for_label }}" value="{% if form.fechaNacimiento.value %}{{ form.fechaNacimiento.value|date:'d/m/Y'|default:form.fechaNacimiento.value }}{% endif %}" placeholder="DD/MM/AAAA" maxlength="10" style="flex: 1;" oninput="mascaraFecha(this)">
+                <button type="button" onclick="abrirCalendarioFecha('{{ form.fechaNacimiento.id_for_label }}', this)" title="Seleccionar del calendario" style="background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.55rem 0.65rem; cursor: pointer; font-size: 1rem;">📅</button>
+              </div>
+              {% if form.fechaNacimiento.errors %}<div class="field-error-text">{{ form.fechaNacimiento.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 2: Primer Nombre (SM), Segundo Nombre (SM), Primer Apellido (SM), Segundo Apellido (SM), Alias (SM) -->
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.primerNombre.id_for_label }}">Primer nombre *</label>
+              <input type="text" name="primerNombre" id="{{ form.primerNombre.id_for_label }}" value="{{ form.primerNombre.value|default:'' }}" required style="text-transform: uppercase;">
+              {% if form.primerNombre.errors %}<div class="field-error-text">{{ form.primerNombre.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 2;">
+              <label for="{{ form.segundoNombre.id_for_label }}">Segundo nombre:</label>
+              <input type="text" name="segundoNombre" id="{{ form.segundoNombre.id_for_label }}" value="{{ form.segundoNombre.value|default:'' }}" style="text-transform: uppercase;">
+              {% if form.segundoNombre.errors %}<div class="field-error-text">{{ form.segundoNombre.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.primerApellido.id_for_label }}">Primer apellido *</label>
+              <input type="text" name="primerApellido" id="{{ form.primerApellido.id_for_label }}" value="{{ form.primerApellido.value|default:'' }}" required style="text-transform: uppercase;">
+              {% if form.primerApellido.errors %}<div class="field-error-text">{{ form.primerApellido.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 2;">
+              <label for="{{ form.segundoApellido.id_for_label }}">Segundo apellido:</label>
+              <input type="text" name="segundoApellido" id="{{ form.segundoApellido.id_for_label }}" value="{{ form.segundoApellido.value|default:'' }}" style="text-transform: uppercase;">
+              {% if form.segundoApellido.errors %}<div class="field-error-text">{{ form.segundoApellido.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 2;">
+              <label for="{{ form.aliasApodo.id_for_label }}">Alias / Apodo:</label>
+              <input type="text" name="aliasApodo" id="{{ form.aliasApodo.id_for_label }}" value="{{ form.aliasApodo.value|default:'' }}">
+              {% if form.aliasApodo.errors %}<div class="field-error-text">{{ form.aliasApodo.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 3: Consentimiento de datos (XL) -->
+            <div class="field-xl field-group" style="grid-column: 1 / -1; margin-top: 0.5rem;">
+              <label class="check-inline" style="font-size: 0.88rem; color: #06396f; display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                {{ form.consentimientoDatos }}
+                <span>Doy mi consentimiento para el tratamiento y almacenamiento seguro de mis datos personales en la plataforma.</span>
+              </label>
+              {% if form.consentimientoDatos.errors %}<div class="field-error-text">{{ form.consentimientoDatos.errors.0 }}</div>{% endif %}
+            </div>
+
+            {{ form.paisEmisorId }}
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 1.75rem;">
+            <button type="submit" class="primary" style="background: #0057a8 !important; padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+              Guardar y continuar a Contacto →
+            </button>
+          </div>
+        </form>
+      </section>
+
+    <!-- ========================================== -->
+    <!-- PASO 2: CONTACTO -->
+    <!-- ========================================== -->
+    {% elif seccion == 'contacto' %}
+      
+      <!-- Bloque de 2 Tarjetas Simétricas: Correo y Teléfono -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap: 1.5rem; margin-bottom: 1.5rem;">
+        
+        <!-- Tarjeta 1: Correo electrónico -->
+        <section class="card sprint2-card" style="padding: 1.5rem 1.75rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 4px 16px rgba(6,57,111,0.04); background: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
+            <div class="header-with-icon">
+              <div class="circle-icon" style="width: 38px; height: 38px;">
+                <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+              </div>
+              <div>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Correo electrónico</h2>
+                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Registre sus correos de contacto.</p>
+              </div>
+            </div>
+            <button type="button" class="primary" onclick="document.getElementById('modal-public-correo').style.display='block'" style="background: #0057a8 !important; padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 700; white-space: nowrap; border-radius: 8px; cursor: pointer;">
+              + Agregar correo
+            </button>
+          </div>
+
+          <!-- Formulario Desplegable para Agregar Correo -->
+          <div id="modal-public-correo" style="display: none; background: #f8fafc; border: 1px solid #dbe6ef; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="color: #06396f; font-size: 0.88rem;">Nuevo correo</strong>
+              <button type="button" onclick="document.getElementById('modal-public-correo').style.display='none'" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer;">×</button>
+            </div>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="correo">
+              <div style="margin-bottom: 0.65rem;">
+                {{ form2.correo }}
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+                <button type="button" onclick="document.getElementById('modal-public-correo').style.display='none'" class="secondary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">Cancelar</button>
+                <button type="submit" class="primary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">Guardar</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tabla de Correos -->
+          <div style="border: 1px solid #e2edf6; border-radius: 10px; overflow: hidden;">
+            <table class="clean-table">
+              <thead>
+                <tr>
+                  <th>Correo electrónico</th>
+                  <th style="text-align: center; width: 85px;">Principal</th>
+                  <th style="text-align: center; width: 70px;">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for x in ctx.contactos.correos %}
+                  <tr>
+                    <td style="font-weight: 600; color: #0f172a;">{{ x.correo }}</td>
+                    <td style="text-align: center;">
+                      {% if x.principal == 'S' %}<span class="pill-badge pill-badge-green">Principal</span>{% else %}<span style="color: #94a3b8;">—</span>{% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                      <form method="post" style="margin: 0;" onsubmit="return confirm('¿Retirar este correo?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="borrar_correo">
+                        <input type="hidden" name="id" value="{{ x.id_persona_correo }}">
+                        <button type="submit" class="action-btn action-btn-delete" title="Eliminar correo">
+                          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 1.25rem;">No hay correos registrados.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Tarjeta 2: Teléfono -->
+        <section class="card sprint2-card" style="padding: 1.5rem 1.75rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 4px 16px rgba(6,57,111,0.04); background: #ffffff;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem;">
+            <div class="header-with-icon">
+              <div class="circle-icon" style="width: 38px; height: 38px;">
+                <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+              </div>
+              <div>
+                <h2 style="font-size: 1.15rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Teléfono</h2>
+                <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Registre números de contacto.</p>
+              </div>
+            </div>
+            <button type="button" class="primary" onclick="document.getElementById('modal-public-telefono').style.display='block'" style="background: #0057a8 !important; padding: 0.5rem 1rem; font-size: 0.82rem; font-weight: 700; white-space: nowrap; border-radius: 8px; cursor: pointer;">
+              + Agregar teléfono
+            </button>
+          </div>
+
+          <!-- Formulario Desplegable para Agregar Teléfono -->
+          <div id="modal-public-telefono" style="display: none; background: #f8fafc; border: 1px solid #dbe6ef; border-radius: 10px; padding: 1rem; margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+              <strong style="color: #06396f; font-size: 0.88rem;">Nuevo teléfono</strong>
+              <button type="button" onclick="document.getElementById('modal-public-telefono').style.display='none'" style="background: none; border: none; font-size: 1.1rem; color: #94a3b8; cursor: pointer;">×</button>
+            </div>
+            <form method="post">
+              {% csrf_token %}
+              <input type="hidden" name="accion" value="telefono">
+              <div class="sprint2-grid-12" style="gap: 0.75rem;">
+                <div class="field-sm field-group" style="grid-column: span 6;">
+                  <label for="{{ form.tipoContactoId.id_for_label }}">Tipo:</label>
+                  {{ form.tipoContactoId }}
+                </div>
+                <div class="field-sm field-group" style="grid-column: span 6;">
+                  <label for="{{ form.extension.id_for_label }}">Extensión:</label>
+                  {{ form.extension }}
+                </div>
+                <div class="field-sm field-group phone-code-cell" style="grid-column: span 5;">
+                  <label for="{{ form.codigoPais.id_for_label }}">Código:</label>
+                  <div style="display: flex; gap: 0.25rem;">
+                    {{ form.codigoPais }}
+                    {{ form.codigoArea }}
+                  </div>
+                </div>
+                <div class="field-l field-group phone-number-cell" style="grid-column: span 7;">
+                  <label for="{{ form.numero.id_for_label }}">Número:</label>
+                  {{ form.numero }}
+                </div>
+                <div class="field-xl field-group" style="grid-column: 1 / -1; display: flex; gap: 1rem;">
+                  <label class="check-inline">{{ form.usaWhatsapp }} Con WhatsApp</label>
+                  <label class="check-inline">{{ form.principal }} Principal</label>
+                </div>
+                {{ form.codigoTelefonicoId }}
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem;">
+                <button type="button" onclick="document.getElementById('modal-public-telefono').style.display='none'" class="secondary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">Cancelar</button>
+                <button type="submit" class="primary" style="padding: 0.4rem 0.85rem; font-size: 0.82rem;">Guardar</button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Tabla de Teléfonos -->
+          <div style="border: 1px solid #e2edf6; border-radius: 10px; overflow-x: auto;">
+            <table class="clean-table" style="min-width: 440px;">
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th style="text-align: center;">Número</th>
+                  <th style="text-align: center; width: 70px;">WhatsApp</th>
+                  <th style="text-align: center; width: 70px;">Principal</th>
+                  <th style="text-align: center; width: 50px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for x in ctx.contactos.telefonos %}
+                  <tr>
+                    <td style="font-weight: 600; color: #0f172a;">{% if x.desc_tipo_contacto %}{{ x.desc_tipo_contacto }}{% else %}Móvil{% endif %}</td>
+                    <td style="text-align: center; font-weight: 700; color: #0f172a;">
+                      {{ x.codigo_pais|default:'+58' }} {{ x.codigo_area_operador }} {{ x.numero }}
+                    </td>
+                    <td style="text-align: center;">
+                      {% if x.usa_whatsapp == 'S' %}<span class="pill-badge pill-badge-green">Sí</span>{% else %}<span style="color: #94a3b8;">—</span>{% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                      {% if x.principal == 'S' %}<span class="pill-badge pill-badge-green">Sí</span>{% else %}<span style="color: #94a3b8;">—</span>{% endif %}
+                    </td>
+                    <td style="text-align: center;">
+                      <form method="post" style="margin: 0;" onsubmit="return confirm('¿Retirar este teléfono?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="accion" value="borrar_telefono">
+                        <input type="hidden" name="id" value="{{ x.id_persona_telefono }}">
+                        <button type="submit" class="action-btn action-btn-delete" title="Eliminar teléfono">
+                          <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                {% empty %}
+                  <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.25rem;">No hay teléfonos registrados.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+      </div>
+
+      <!-- Tarjeta 3: Redes Sociales -->
+      <section class="card sprint2-card" style="padding: 1.5rem 1.75rem; border-radius: 12px; border: 1px solid #dbe9f4; box-shadow: 0 4px 16px rgba(6,57,111,0.04); background: #ffffff; margin-bottom: 1.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; gap: 1rem; flex-wrap: wrap;">
+          <div class="header-with-icon">
+            <div class="circle-icon" style="width: 38px; height: 38px;">
+              <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+            </div>
+            <div>
+              <h2 style="font-size: 1.15rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Redes sociales</h2>
+              <p style="font-size: 0.82rem; color: #64748b; margin: 0;">Registre sus cuentas y perfiles en redes sociales.</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            {% for r in redes_list %}
+              {% if r.valor %}
+                <span class="pill-badge pill-badge-blue" style="font-size: 0.78rem;">
+                  <b>{{ r.tipo }}:</b> {{ r.valor }}
+                </span>
+              {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="accion" value="redes">
+          <div class="sprint2-grid-12" style="gap: 1rem;">
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form_redes.facebook.id_for_label }}">Facebook:</label>
+              {{ form_redes.facebook }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form_redes.instagram.id_for_label }}">Instagram:</label>
+              {{ form_redes.instagram }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form_redes.youtube.id_for_label }}">YouTube:</label>
+              {{ form_redes.youtube }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form_redes.xTwitter.id_for_label }}">X (Twitter):</label>
+              {{ form_redes.xTwitter }}
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+            <button type="submit" class="primary" style="background: #0057a8 !important; padding: 0.5rem 1.25rem; font-size: 0.85rem; font-weight: 700;">
+              Guardar redes sociales
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Botón para avanzar de Contacto a Territorio -->
+      <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
+        <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='territorio' %}" style="background: #0057a8 !important; padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; text-decoration: none; color: #fff;">
+          Continuar a Territorio →
+        </a>
+      </div>
+
+    <!-- ========================================== -->
+    <!-- PASO 3: TERRITORIO (DIRECCIÓN) -->
+    <!-- ========================================== -->
+    {% elif seccion == 'territorio' %}
+      <section class="card sprint2-card" style="padding: 1.75rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); background: #ffffff;">
+        <div class="header-with-icon" style="margin-bottom: 1.5rem;">
+          <div class="circle-icon" style="width: 42px; height: 42px;">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Territorio y Residencia</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Indique su ubicación geográfica y dirección complementaria.</p>
+          </div>
+        </div>
+
         <form method="post" id="wizard-form">
           {% csrf_token %}
-          {{ form.as_p }}
-          <div class="buttons"><button class="primary" name="accion" value="guardar">Guardar y continuar</button></div>
+          {{ form.non_field_errors }}
+
+          <div class="sprint2-grid-12" style="gap: 1.15rem 1rem;">
+            <!-- Fila 1: País (S), Estado (SM), Ciudad (SM), Municipio (SM) -->
+            <div class="field-s field-group" style="grid-column: span 3;">
+              <label for="{{ form.paisId.id_for_label }}">País *</label>
+              {{ form.paisId }}
+              {% if form.paisId.errors %}<div class="field-error-text">{{ form.paisId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.estadoId.id_for_label }}">Estado:</label>
+              {{ form.estadoId }}
+              {% if form.estadoId.errors %}<div class="field-error-text">{{ form.estadoId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.ciudadId.id_for_label }}">Ciudad:</label>
+              {{ form.ciudadId }}
+              {% if form.ciudadId.errors %}<div class="field-error-text">{{ form.ciudadId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.municipioId.id_for_label }}">Municipio:</label>
+              {{ form.municipioId }}
+              {% if form.municipioId.errors %}<div class="field-error-text">{{ form.municipioId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 2: Parroquia (SM), Tipo Sector (SM), Sector (SM), Código Postal (XS) -->
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.parroquiaId.id_for_label }}">Parroquia:</label>
+              {{ form.parroquiaId }}
+              {% if form.parroquiaId.errors %}<div class="field-error-text">{{ form.parroquiaId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 3;">
+              <label for="{{ form.tipoSectorId.id_for_label }}">Tipo de sector:</label>
+              {{ form.tipoSectorId }}
+              {% if form.tipoSectorId.errors %}<div class="field-error-text">{{ form.tipoSectorId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.sectorId.id_for_label }}">Sector geográfico:</label>
+              {{ form.sectorId }}
+              {% if form.sectorId.errors %}<div class="field-error-text">{{ form.sectorId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-xs field-group" style="grid-column: span 2;">
+              <label for="{{ form.codigoPostalId.id_for_label }}">Cód. postal:</label>
+              {{ form.codigoPostalId }}
+              {% if form.codigoPostalId.errors %}<div class="field-error-text">{{ form.codigoPostalId.errors.0 }}</div>{% endif %}
+            </div>
+
+            <!-- Fila 3: Dirección complementaria (span 6) y Ubicación al lado (span 6) -->
+            <div class="field-l field-group" style="grid-column: span 6;">
+              <label for="{{ form.direccionComplementaria.id_for_label }}">Dirección complementaria:</label>
+              {{ form.direccionComplementaria }}
+              {% if form.direccionComplementaria.errors %}<div class="field-error-text">{{ form.direccionComplementaria.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-l field-group" style="grid-column: span 6;">
+              <label for="{{ form.ubicacion.id_for_label }}">Ubicación (referencia geográfica):</label>
+              {{ form.ubicacion }}
+              {% if form.ubicacion.errors %}<div class="field-error-text">{{ form.ubicacion.errors.0 }}</div>{% endif %}
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 1.75rem;">
+            <button type="submit" name="accion" value="guardar" class="primary" style="background: #0057a8 !important; padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+              Guardar y continuar a Datos Académicos →
+            </button>
+          </div>
         </form>
-      {% endif %}
-    </div>
+      </section>
+
+    <!-- ========================================== -->
+    <!-- PASO 4: DATOS ACADÉMICOS -->
+    <!-- ========================================== -->
+    {% elif seccion == 'academico' %}
+      <section class="card sprint2-card" style="padding: 1.75rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); background: #ffffff;">
+        <div class="header-with-icon" style="margin-bottom: 1.5rem;">
+          <div class="circle-icon" style="width: 42px; height: 42px;">
+            <svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"></path><path d="M6 12v5c3 3 9 3 12 0v-5"></path></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Información Académica y Profesional</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Registre sus niveles educativos, títulos, ocupaciones y disponibilidad.</p>
+          </div>
+        </div>
+
+        <form method="post">
+          {% csrf_token %}
+          {{ form.non_field_errors }}
+
+          <div class="sprint2-grid-12" style="gap: 1.15rem 1rem;">
+            
+            <!-- Fila 1: Nivel (S), Título 1 (SM), Especialidad 1 (SM) -->
+            <div class="field-s field-group" style="grid-column: span 4;">
+              <label for="{{ form.nivelId.id_for_label }}">Nivel académico:</label>
+              {{ form.nivelId }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.titulo1Id.id_for_label }}">Título 1:</label>
+              {{ form.titulo1Id }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.especialidadId.id_for_label }}">Especialidad 1:</label>
+              {{ form.especialidadId }}
+            </div>
+
+            <!-- Fila 2: Título 2 (SM), Especialidad 2 (SM), Postgrado (SM) -->
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.titulo2Id.id_for_label }}">Título 2:</label>
+              {{ form.titulo2Id }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.especialidad2Id.id_for_label }}">Especialidad 2:</label>
+              {{ form.especialidad2Id }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.descripcionPostgrado.id_for_label }}">Postgrado:</label>
+              {{ form.descripcionPostgrado }}
+            </div>
+
+            <!-- Fila 3: Doctorado (SM), Magíster (SM), Honor académico (SM) -->
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.descripcionDoctorado.id_for_label }}">Doctorado:</label>
+              {{ form.descripcionDoctorado }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.descripcionMagister.id_for_label }}">Magíster:</label>
+              {{ form.descripcionMagister }}
+            </div>
+            <div class="field-sm field-group" style="grid-column: span 4;">
+              <label for="{{ form.honorId.id_for_label }}">Honor académico:</label>
+              {{ form.honorId }}
+            </div>
+
+            <!-- Fila 4: Ocupación 1, 2, 3 -->
+            <div class="field-m field-group" style="grid-column: span 4;">
+              <label for="{{ form.ocupacion1.id_for_label }}">Ocupación 1:</label>
+              {{ form.ocupacion1 }}
+            </div>
+            <div class="field-m field-group" style="grid-column: span 4;">
+              <label for="{{ form.ocupacion2.id_for_label }}">Ocupación 2:</label>
+              {{ form.ocupacion2 }}
+            </div>
+            <div class="field-m field-group" style="grid-column: span 4;">
+              <label for="{{ form.ocupacion3.id_for_label }}">Ocupación 3:</label>
+              {{ form.ocupacion3 }}
+            </div>
+
+            <!-- Fila 5: Disponibilidad (S), Modalidad (S), Observación (L) -->
+            <div class="field-s field-group" style="grid-column: span 3;">
+              <label for="{{ form.disponibilidadId.id_for_label }}">Disponibilidad:</label>
+              {{ form.disponibilidadId }}
+            </div>
+            <div class="field-s field-group" style="grid-column: span 3;">
+              <label for="{{ form.modalidadId.id_for_label }}">Modalidad:</label>
+              {{ form.modalidadId }}
+            </div>
+            <div class="field-l field-group" style="grid-column: span 6;">
+              <label for="{{ form.observacion.id_for_label }}">Observación:</label>
+              {{ form.observacion }}
+            </div>
+
+            {{ form.postgrado }}
+            {{ form.doctorado }}
+            {{ form.magister }}
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 1.75rem;">
+            <button type="submit" class="primary" style="background: #0057a8 !important; padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+              Guardar y continuar a Registro Electoral →
+            </button>
+          </div>
+        </form>
+      </section>
+
+    <!-- ========================================== -->
+    <!-- PASO 5: REGISTRO ELECTORAL -->
+    <!-- ========================================== -->
+    {% elif seccion == 'electoral' %}
+      <section class="card sprint2-card" style="padding: 1.75rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); background: #ffffff;">
+        <div class="header-with-icon" style="margin-bottom: 1.5rem;">
+          <div class="circle-icon" style="width: 42px; height: 42px;">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Registro Electoral Oficial</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Información devuelta por la consulta electoral del CNE.</p>
+          </div>
+        </div>
+
+        <!-- Aviso oficial permanente del CNE -->
+        <div class="warning electoral-warning" style="background: #fff3cd; border-left: 5px solid #ffc21c; border-radius: 8px; padding: 1rem 1.25rem; color: #664d03; font-size: 0.92rem; font-weight: 600; margin-bottom: 1.5rem; line-height: 1.45;">
+          Los datos aquí presentados pudieran estar o no actualizados en relación con la base de datos del CNE.
+        </div>
+
+        {% if ctx.electoral.existe %}
+          <div style="background: #f8fafc; border: 1px solid #e2edf6; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 1rem;">
+              <span class="pill-badge pill-badge-green" style="font-size: 0.82rem; padding: 0.35rem 0.85rem;">Elector Verificado</span>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; font-size: 0.88rem; color: #334155;">
+              <div><span style="color: #64748b; display: block; font-size: 0.8rem;">Estado:</span> <strong>{{ ctx.electoral.registro.estado|default:'—' }}</strong></div>
+              <div><span style="color: #64748b; display: block; font-size: 0.8rem;">Municipio:</span> <strong>{{ ctx.electoral.registro.municipio|default:'—' }}</strong></div>
+              <div><span style="color: #64748b; display: block; font-size: 0.8rem;">Parroquia:</span> <strong>{{ ctx.electoral.registro.parroquia|default:'—' }}</strong></div>
+              <div style="grid-column: 1 / -1;"><span style="color: #64748b; display: block; font-size: 0.8rem;">Centro de votación:</span> <strong style="font-size: 1rem; color: #06396f;">{{ ctx.electoral.registro.centro_electoral|default:'—' }}</strong></div>
+            </div>
+          </div>
+        {% else %}
+          <div style="background: #f8fafc; border: 1px solid #e2edf6; border-radius: 12px; padding: 1.75rem; margin-bottom: 1.75rem; text-align: center; color: #64748b;">
+            <p style="margin: 0;">No se detectó registro oficial para el documento en la consulta electoral automatizada.</p>
+          </div>
+        {% endif %}
+
+        <div style="display: flex; justify-content: flex-end;">
+          <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='grupos' %}" style="background: #0057a8 !important; padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; text-decoration: none; color: #fff;">
+            Continuar a Grupos →
+          </a>
+        </div>
+      </section>
+
+    <!-- ========================================== -->
+    <!-- PASO 6: VINCULACIÓN CON GRUPOS -->
+    <!-- ========================================== -->
+    {% elif seccion == 'grupos' %}
+      <section class="card sprint2-card" style="padding: 1.75rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); background: #ffffff;">
+        <div class="header-with-icon" style="margin-bottom: 1.5rem;">
+          <div class="circle-icon" style="width: 42px; height: 42px;">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Vinculación con Grupos y Organizaciones</h2>
+            <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Seleccione los grupos a los que pertenece o declare uno nuevo.</p>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; margin-bottom: 1.75rem;">
+          
+          <!-- Formulario Agregar Grupo -->
+          <div style="background: #f8fafc; border: 1px solid #e2edf6; border-radius: 12px; padding: 1.5rem;">
+            <h3 style="font-size: 1rem; font-weight: 700; color: #06396f; margin: 0 0 1rem 0;">Agregar a un grupo</h3>
+            <form method="post">
+              {% csrf_token %}
+              {{ form.non_field_errors }}
+              
+              <div style="margin-bottom: 1rem;">
+                <label for="{{ form.grupoId.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.35rem;">Grupo existente:</label>
+                {{ form.grupoId }}
+              </div>
+
+              <div style="margin-bottom: 1.25rem;">
+                <label for="{{ form.otroGrupo.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.85rem; margin-bottom: 0.35rem;">Otro Grupo (si no está listado):</label>
+                {{ form.otroGrupo }}
+              </div>
+
+              <button class="primary" type="submit" style="background: #0057a8 !important; padding: 0.65rem 1.5rem; font-size: 0.9rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; width: 100%;">
+                + Agregar grupo
+              </button>
+            </form>
+          </div>
+
+          <!-- Grupos Vinculados Actuales -->
+          <div style="background: #ffffff; border: 1px solid #e2edf6; border-radius: 12px; padding: 1.5rem;">
+            <h3 style="font-size: 1rem; font-weight: 700; color: #06396f; margin: 0 0 1rem 0;">Grupos asignados</h3>
+            
+            {% if ctx.otroGrupo %}
+              <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <span style="font-size: 0.75rem; color: #1e40af; font-weight: 700; text-transform: uppercase;">Otro Grupo Declarado</span>
+                  <div style="font-weight: 800; color: #1e3a8a; font-size: 0.95rem;">{{ ctx.otroGrupo }}</div>
+                </div>
+                <span class="pill-badge pill-badge-blue">Personalizado</span>
+              </div>
+            {% endif %}
+
+            {% if ctx.grupos %}
+              <ul style="list-style: none; padding: 0; margin: 0;">
+                {% for x in ctx.grupos %}
+                  <li style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: #f8fafc; border-radius: 8px; margin-bottom: 0.5rem; border: 1px solid #e2edf6;">
+                    <span style="font-weight: 700; color: #1e293b; font-size: 0.9rem;">{{ x.descripcion }}</span>
+                    <form method="post" action="{% url 'registro_publico_grupo_quitar' token=token gid=x.id_grupo %}" style="margin: 0;" onsubmit="return confirm('¿Quitar de este grupo?');">
+                      {% csrf_token %}
+                      <button type="submit" class="action-btn action-btn-delete" title="Quitar grupo">
+                        <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                      </button>
+                    </form>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% elif not ctx.otroGrupo %}
+              <div style="text-align: center; color: #94a3b8; padding: 2rem 1rem;">
+                No tiene grupos vinculados actualmente.
+              </div>
+            {% endif %}
+          </div>
+
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='finalizar' %}" style="background: #0057a8 !important; padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; text-decoration: none; color: #fff;">
+            Continuar a Finalizar →
+          </a>
+        </div>
+      </section>
+
+    <!-- ========================================== -->
+    <!-- PASO 7: FINALIZAR -->
+    <!-- ========================================== -->
+    {% elif seccion == 'finalizar' %}
+      <section class="card sprint2-card" style="padding: 2.5rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); background: #ffffff; text-align: center; max-width: 600px; margin: 0 auto;">
+        
+        <div class="circle-icon" style="width: 68px; height: 68px; margin: 0 auto 1.25rem; background: #ecfdf5; color: #059669;">
+          <svg style="width: 36px; height: 36px; stroke: #059669;" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        </div>
+
+        <h2 style="font-size: 1.6rem; font-weight: 800; color: #06396f; margin: 0 0 0.5rem 0;">¡Registro completado exitosamente!</h2>
+        <p style="font-size: 0.95rem; color: #64748b; line-height: 1.5; margin: 0 0 2rem 0;">
+          Toda la información personal, de contacto, territorio, datos académicos, electorales y grupos ha sido procesada y registrada en el sistema de forma segura.
+        </p>
+
+        <form method="post" action="{% url 'registro_publico_salir' token=token %}">
+          {% csrf_token %}
+          <button type="submit" class="primary full" style="width: 100%; background: #0057a8 !important; padding: 0.85rem; font-size: 1rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+            Finalizar y Salir
+          </button>
+        </form>
+      </section>
+    {% endif %}
+
   {% endif %}
-</section>
-{% if seccion == 'territorio' %}
+</div>
+
+<!-- Scripts de Soporte: Máscara de Fecha y Territorio dinámico -->
 <script>
-document.addEventListener('DOMContentLoaded',function(){
-  const form=document.getElementById('wizard-form'); if(!form)return;
-  ['id_paisId','id_estadoId','id_ciudadId','id_municipioId','id_parroquiaId','id_sectorId'].forEach(function(id){
-    const el=document.getElementById(id); if(!el)return;
-    el.addEventListener('change',function(){
-      const action=document.createElement('input'); action.type='hidden'; action.name='accion'; action.value='catalogo'; form.appendChild(action); form.submit();
+function mascaraFecha(input) {
+  let v = input.value.replace(/\D/g, '');
+  if (v.length > 8) v = v.substring(0, 8);
+  if (v.length >= 5) {
+    input.value = v.substring(0, 2) + '/' + v.substring(2, 4) + '/' + v.substring(4);
+  } else if (v.length >= 3) {
+    input.value = v.substring(0, 2) + '/' + v.substring(2);
+  } else {
+    input.value = v;
+  }
+}
+
+function convertirFechaNativa(picker) {
+  if (!picker.value) return;
+  const partes = picker.value.split('-');
+  if (partes.length === 3) {
+    const fnInput = document.getElementById('{{ form.fechaNacimiento.id_for_label }}');
+    if (fnInput) {
+      fnInput.value = partes[2] + '/' + partes[1] + '/' + partes[0];
+    }
+  }
+}
+
+{% if seccion == 'territorio' %}
+document.addEventListener('DOMContentLoaded', function(){
+  const form = document.getElementById('wizard-form');
+  if (!form) return;
+  ['id_paisId', 'id_estadoId', 'id_ciudadId', 'id_municipioId', 'id_parroquiaId', 'id_tipoSectorId', 'id_sectorId'].forEach(function(id){
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function(){
+      const action = document.createElement('input');
+      action.type = 'hidden';
+      action.name = 'accion';
+      action.value = 'catalogo';
+      form.appendChild(action);
+      form.submit();
     });
   });
 });
-</script>
 {% endif %}
+</script>
+
+{% if codigos_catalogo %}
+{{ codigos_catalogo|json_script:"sira-codigos-catalogo" }}
+{% endif %}
+{% endblock %}
+
+{% block footer %}
+{# Omit internal system footer on public registration assistant #}
 {% endblock %}

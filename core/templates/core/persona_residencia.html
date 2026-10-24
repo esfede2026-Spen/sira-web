@@ -1,1 +1,76 @@
-{% extends 'core/base.html' %}{% load static %}{% block title %}Territorio · SIRA{% endblock %}{% block content %}<div class="wizard"><b>P07</b><div><h1>Dirección</h1><p>{{p.primer_nombre}} {{p.primer_apellido}}</p></div></div><nav class="profile-tabs v41"><a href="{% url 'persona_editar' pid %}">Identificación</a><a href="{% url 'persona_contacto' pid %}">Contacto</a><a href="{% url 'persona_residencia' pid %}">Dirección</a><a href="{% url 'persona_academico' pid %}">Datos académicos</a><a href="{% url 'persona_electoral' pid %}">Registro electoral</a><a href="{% url 'persona_grupos' pid %}">Grupos</a></nav><section class="card"><form method="post" id="residencia-form" data-geo-url="/ajax/geografia/">{% csrf_token %}<div class="grid">{{form.as_p}}</div><div class="buttons"><a class="secondary" href="{% url 'persona_contacto' pid %}">Regresar</a><button class="primary">Guardar y continuar</button></div></form></section>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Dirección · Victoria{% endblock %}
+{% block content %}
+<div class="wizard">
+  <b>P07</b>
+  <div>
+    <h1>Dirección</h1>
+    <p>{{ p.primer_nombre }} {{ p.primer_apellido }} · Domicilio principal</p>
+  </div>
+</div>
+
+<nav class="profile-tabs v41">
+  <a href="{% url 'persona_editar' pid %}">Identificación</a>
+  <a href="{% url 'persona_electoral' pid %}">Registro electoral</a>
+  <a href="{% url 'persona_contacto' pid %}">Contacto</a>
+  <a class="active" href="{% url 'persona_residencia' pid %}">Territorio</a>
+  <a href="{% url 'persona_academico' pid %}">Datos académicos</a>
+  <a href="{% url 'persona_grupos' pid %}">Grupos</a>
+</nav>
+
+<section class="card sprint2-card">
+  <div class="note">
+    <b>Jerarquía territorial</b>
+    <small>Seleccione País, Estado, Ciudad, Municipio y Parroquia para cargar los sectores disponibles.</small>
+  </div>
+
+  <form method="post" id="residencia-form" data-geo-url="/ajax/geografia/" class="sprint2-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+
+    <div class="sprint2-grid-12">
+      <!-- Fila 1: País (S), Estado (SM), Ciudad (SM), Municipio (SM) -->
+      <div class="field-s">
+        {{ form.paisId.as_field_group }}
+      </div>
+      <div class="field-sm">
+        {{ form.estadoId.as_field_group }}
+      </div>
+      <div class="field-sm">
+        {{ form.ciudadId.as_field_group }}
+      </div>
+      <div class="field-sm">
+        {{ form.municipioId.as_field_group }}
+      </div>
+
+      <!-- Fila 2: Parroquia (SM), Tipo Sector (SM), Sector (SM), Código Postal (XS) -->
+      <div class="field-sm">
+        {{ form.parroquiaId.as_field_group }}
+      </div>
+      <div class="field-sm">
+        {{ form.tipoSectorId.as_field_group }}
+      </div>
+      <div class="field-sm">
+        {{ form.sectorId.as_field_group }}
+      </div>
+      <div class="field-xs">
+        {{ form.codigoPostalId.as_field_group }}
+      </div>
+
+      <!-- Fila 3: Dirección Complementaria y Ubicación al lado -->
+      <div class="field-l" style="grid-column: span 6;">
+        {{ form.direccionComplementaria.as_field_group }}
+      </div>
+      <div class="field-l" style="grid-column: span 6;">
+        {{ form.ubicacion.as_field_group }}
+      </div>
+    </div>
+
+    <div class="buttons">
+      <a class="secondary" href="{% url 'persona_contacto' pid %}">Regresar</a>
+      <button class="primary" type="submit">Guardar y continuar</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

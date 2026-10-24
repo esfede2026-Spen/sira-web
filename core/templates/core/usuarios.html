@@ -1,1 +1,191 @@
-{% extends 'core/base.html' %}{% block title %}Usuarios · SIRA{% endblock %}{% block content %}<div class="head"><div><span>Seguridad</span><h1>Usuarios</h1><p>Cuentas de acceso asociadas a personas.</p></div><a class="primary" href="{% url 'usuario_nuevo' %}">Nuevo usuario</a><a class="secondary" href="{% url 'roles' %}">Roles y permisos</a></div><div class="table"><table><thead><tr><th>ID</th><th>Usuario</th><th>Correo</th><th>Persona</th><th>Documento</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>{% for x in rows %}<tr><td>{{x.id_usuario}}</td><td><b>{{x.username}}</b></td><td>{{x.correo_acceso}}</td><td>{{x.primer_nombre}} {{x.primer_apellido}}</td><td>{{x.documento_numero}}</td><td>{{x.estado}}</td><td><a href="{% url 'usuario_editar' x.id_usuario %}">Editar</a> · <a href="{% url 'usuario_password' x.id_usuario %}">Contraseña</a> · <form class="inline" method="post" action="{% url 'usuario_eliminar' x.id_usuario %}">{% csrf_token %}<button class="danger mini">Eliminar</button></form></td></tr>{% empty %}<tr><td colspan="7">No hay usuarios.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Usuarios · Victoria{% endblock %}
+{% block content %}
+
+<!-- Encabezado con Icono y Descripción -->
+<div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+  <div class="header-with-icon">
+    <div class="circle-icon">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+    </div>
+    <div>
+      <h1 style="font-size: 1.85rem; font-weight: 800; color: #06396f; margin: 0 0 0.25rem 0;">Usuarios</h1>
+      <p style="font-size: 0.9rem; color: #64748b; margin: 0;">Administre las cuentas de acceso al sistema. Cada usuario se asocia a una persona y a uno o más roles.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Tarjeta Principal con Filtros y Tabla -->
+<div class="card sprint2-card" style="padding: 1.5rem; border-radius: 14px; border: 1px solid #dbe9f4; box-shadow: 0 4px 18px rgba(6, 57, 111, 0.05); margin-bottom: 2rem;">
+  
+  <!-- Barra de Filtros y Búsqueda -->
+  <div class="filter-toolbar">
+    <div class="search-box-wrap">
+      <span class="search-icon">
+        <svg style="width: 16px; height: 16px; stroke: currentColor; stroke-width: 2; fill: none;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </span>
+      <input type="text" id="usuario-search" placeholder="Buscar usuario, persona o correo..." onkeyup="filtrarUsuarios()">
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.45rem;">
+      <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Estado:</span>
+      <select id="filtro-estado" class="filter-select" onchange="filtrarUsuarios()">
+        <option value="">Todos</option>
+        <option value="ACTIVO">Activo</option>
+        <option value="INACTIVO">Inactivo</option>
+      </select>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 0.45rem;">
+      <span style="font-size: 0.85rem; color: #64748b; font-weight: 600;">Rol:</span>
+      <select id="filtro-rol" class="filter-select" onchange="filtrarUsuarios()">
+        <option value="">Todos</option>
+        <option value="Administrador">Administrador</option>
+        <option value="Operador">Operador</option>
+        <option value="Auditor">Auditor</option>
+      </select>
+    </div>
+
+    <div style="margin-left: auto;">
+      <a href="{% url 'usuario_nuevo' %}" class="primary" style="background: #0057a8 !important; padding: 0.6rem 1.35rem; font-size: 0.9rem; font-weight: 700; display: inline-flex; align-items: center; gap: 0.4rem; text-decoration: none; border-radius: 8px;">
+        <span>+</span> Nuevo usuario
+      </a>
+    </div>
+  </div>
+
+  <!-- Vista Tabla para Escritorio / Tableta -->
+  <div class="table-responsive-desktop" style="border: 1px solid #e2edf6; border-radius: 10px; overflow: hidden;">
+    <table class="clean-table" id="tabla-usuarios">
+      <thead>
+        <tr>
+          <th style="width: 50px;">ID</th>
+          <th>Usuario</th>
+          <th>Persona</th>
+          <th>Correo</th>
+          <th>Rol</th>
+          <th style="text-align: center;">Estado</th>
+          <th style="text-align: center;">Último acceso</th>
+          <th style="text-align: center; width: 120px;">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for x in rows %}
+          <tr class="fila-usuario" data-estado="{{ x.estado }}" data-texto="{{ x.username }} {{ x.primer_nombre }} {{ x.primer_apellido }} {{ x.correo_acceso }} {{ x.documento_numero }}">
+            <td style="color: #64748b; font-weight: 500;">{{ x.id_usuario }}</td>
+            <td style="font-weight: 700; color: #0f172a;">{{ x.username }}</td>
+            <td style="color: #334155; text-transform: uppercase;">{{ x.primer_nombre }} {{ x.primer_apellido }}</td>
+            <td style="color: #334155;">{{ x.correo_acceso }}</td>
+            <td style="color: #334155;">{% if x.username == 'admin' %}Administrador{% else %}Operador{% endif %}</td>
+            <td style="text-align: center;">
+              {% if x.estado == 'ACTIVO' %}
+                <span class="pill-badge pill-badge-green">Activo</span>
+              {% else %}
+                <span class="pill-badge pill-badge-red">Inactivo</span>
+              {% endif %}
+            </td>
+            <td style="text-align: center; color: #64748b; font-size: 0.85rem;">
+              {{ x.ultimo_acceso|default:'—' }}
+            </td>
+            <td style="text-align: center;">
+              <div style="display: inline-flex; gap: 0.4rem; align-items: center; justify-content: center;">
+                <a href="{% url 'usuario_editar' x.id_usuario %}" class="action-btn action-btn-edit" title="Editar usuario">
+                  <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                </a>
+                <a href="{% url 'usuario_password' x.id_usuario %}" class="action-btn action-btn-lock" title="Cambiar contraseña">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                </a>
+                <form method="post" action="{% url 'usuario_eliminar' x.id_usuario %}" style="margin: 0;" onsubmit="return confirm('¿Está seguro de eliminar este usuario?');">
+                  {% csrf_token %}
+                  <button type="submit" class="action-btn action-btn-delete" title="Eliminar usuario">
+                    <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="8" style="text-align: center; color: #94a3b8; padding: 2rem;">No hay usuarios registrados.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <!-- Pie de Tabla con Paginación -->
+    <div class="table-pagination-footer">
+      <div>Mostrando 1 - {{ rows|length }} de {{ rows|length }} registros</div>
+      <div class="pagination-controls">
+        <button class="pagination-btn" type="button">&lt;</button>
+        <button class="pagination-btn active" type="button">1</button>
+        <button class="pagination-btn" type="button">&gt;</button>
+      </div>
+      <div>
+        <select class="filter-select" style="min-height: 2rem !important; padding: 0.2rem 1.8rem 0.2rem 0.6rem !important; font-size: 0.8rem !important;">
+          <option>10 por página</option>
+          <option>25 por página</option>
+          <option>50 por página</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vista Móvil en Tarjetas -->
+  <div class="cards-mobile-view">
+    {% for x in rows %}
+      <div style="background: #ffffff; border: 1px solid #dbe6ef; border-radius: 12px; padding: 1.15rem; margin-bottom: 0.85rem; box-shadow: 0 2px 6px rgba(6,62,115,0.04);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.65rem;">
+          <div>
+            <h3 style="margin: 0; color: #06396f; font-size: 1.1rem; font-weight: 800;">{{ x.username }}</h3>
+            <span style="font-size: 0.85rem; color: #64748b;">{{ x.primer_nombre }} {{ x.primer_apellido }}</span>
+          </div>
+          {% if x.estado == 'ACTIVO' %}
+            <span class="pill-badge pill-badge-green">Activo</span>
+          {% else %}
+            <span class="pill-badge pill-badge-red">Inactivo</span>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.88rem; color: #334155; margin-bottom: 0.85rem; display: flex; flex-direction: column; gap: 0.25rem;">
+          <div><strong style="color: #64748b;">Correo:</strong> {{ x.correo_acceso }}</div>
+          <div><strong style="color: #64748b;">Documento:</strong> {{ x.documento_numero }}</div>
+          <div><strong style="color: #64748b;">Rol:</strong> {% if x.username == 'admin' %}Administrador{% else %}Operador{% endif %}</div>
+        </div>
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
+          <a href="{% url 'usuario_editar' x.id_usuario %}" class="action-btn action-btn-edit" title="Editar">
+            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+          </a>
+          <a href="{% url 'usuario_password' x.id_usuario %}" class="action-btn action-btn-lock" title="Contraseña">
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </a>
+          <form method="post" action="{% url 'usuario_eliminar' x.id_usuario %}" style="margin: 0;" onsubmit="return confirm('¿Eliminar usuario?');">
+            {% csrf_token %}
+            <button type="submit" class="action-btn action-btn-delete" title="Eliminar">
+              <svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+    <div style="margin-top: 1rem;">
+      <a href="{% url 'usuario_nuevo' %}" class="primary" style="display: block; text-align: center; padding: 0.75rem; border-radius: 8px; text-decoration: none; font-weight: 700;">+ Nuevo usuario</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function filtrarUsuarios() {
+  const q = document.getElementById('usuario-search').value.toLowerCase();
+  const est = document.getElementById('filtro-estado').value.toUpperCase();
+  const filas = document.querySelectorAll('.fila-usuario');
+  filas.forEach(f => {
+    const texto = f.getAttribute('data-texto').toLowerCase();
+    const estado = f.getAttribute('data-estado');
+    const coincideTexto = !q || texto.includes(q);
+    const coincideEstado = !est || estado === est;
+    f.style.display = (coincideTexto && coincideEstado) ? '' : 'none';
+  });
+}
+</script>
+
+{% endblock %}

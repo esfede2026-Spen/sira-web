@@ -3,24 +3,46 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="application-name" content="SIRA">
-<meta name="apple-mobile-web-app-title" content="SIRA">
+<meta name="application-name" content="Victoria">
+<meta name="apple-mobile-web-app-title" content="Victoria">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#06396f">
-<title>{% block title %}SIRA{% endblock %}</title>
-<link rel="icon" type="image/x-icon" href="{% static 'core/img/SIRA.ico' %}">
+<title>{% block title %}Victoria{% endblock %}</title>
+<link rel="icon" type="image/x-icon" href="{% static 'core/img/Victoria.ico' %}">
 <link rel="icon" type="image/png" sizes="32x32" href="{% static 'core/img/favicon-32x32.png' %}">
 <link rel="icon" type="image/png" sizes="16x16" href="{% static 'core/img/favicon-16x16.png' %}">
 <link rel="apple-touch-icon" sizes="180x180" href="{% static 'core/img/apple-touch-icon.png' %}">
 <link rel="manifest" href="{% static 'core/site.webmanifest' %}">
-<link rel="stylesheet" href="{% static 'core/css/sira.css' %}?v=20261008.311">
-<script defer src="{% static 'core/js/sira.js' %}?v=20261008.311"></script>
+<link rel="stylesheet" href="{% static 'core/css/sira.css' %}?v=20261008.312">
+<link rel="stylesheet" href="{% static 'wtogether/css/sprint2-responsive.css' %}?v=20261022.1">
+<script defer src="{% static 'core/js/sira.js' %}?v=20261008.312"></script>
+
+<style id="victoria-cdc-21">
+.victoria-public-actions{display:flex;justify-content:center;align-items:center;gap:.75rem;flex-wrap:wrap;margin:1.15rem auto .35rem;padding:.85rem 1rem;border-top:1px solid rgba(0,87,168,.18);font-size:.94rem}
+.victoria-public-actions a{color:#075b9d;text-decoration:none;font-weight:700}.victoria-public-actions a:hover{text-decoration:underline}
+.victoria-system-footer{display:flex;justify-content:center;align-items:center;gap:.55rem;flex-wrap:wrap;width:100%;padding:1rem 1.25rem;margin-top:2rem;color:#536b80;font-size:.82rem;text-align:center}.victoria-system-footer span+span:before{content:'·';margin-right:.55rem;color:#8da0b1}
+@media(max-width:700px){.victoria-public-actions{display:grid;grid-template-columns:1fr;text-align:center}.victoria-public-actions span{display:none}.victoria-system-footer{display:grid;gap:.2rem}.victoria-system-footer span+span:before{content:'';margin:0}}
+</style>
+
+<style id="victoria-cdc-22">
+.victoria-brand-lines{display:flex;flex-direction:column;line-height:1.15}
+.victoria-brand-lines .victoria-name{font-weight:800;letter-spacing:.12em}
+.victoria-brand-lines .victoria-descriptor{font-size:.86rem;margin-top:.28rem}
+.victoria-brand-lines .victoria-by{font-size:.70rem;margin-top:.24rem;opacity:.86;letter-spacing:.04em}
+.victoria-system-footer{display:flex;justify-content:center;align-items:center;gap:.55rem;flex-wrap:wrap;width:100%;padding:1rem 1.25rem;margin-top:2rem;color:#536b80;font-size:.82rem;text-align:center}
+.victoria-system-footer span+span:before{content:'·';margin-right:.55rem;color:#8da0b1}
+.victoria-login-brand-block{display:flex;align-items:center;gap:.85rem;margin:1.6rem 0 .4rem}
+.victoria-login-brand-block img{width:92px;height:92px;object-fit:contain;flex:0 0 auto}
+.victoria-login-brand-block .victoria-name{font-size:2.15rem}
+img[src*="venezuela_panal"]{display:block;max-width:100%;margin:0 auto 1.35rem!important}
+@media(max-width:700px){.victoria-system-footer{display:grid;gap:.2rem}.victoria-system-footer span+span:before{content:'';margin:0}.victoria-login-brand-block{justify-content:center;text-align:left}.victoria-login-brand-block img{width:78px;height:78px}.victoria-login-brand-block .victoria-name{font-size:1.8rem}}
+</style>
 </head>
-<body>
+<body class="sprint2-page">
 <header class="top">
-<a class="brand" href="{% url 'home' %}"><img src="{% static 'core/img/SIRA_logo_icono.png' %}" alt="SIRA"><span><b>SIRA</b><small>Sistema Inteligente de Registro Activo</small></span></a>
+<a class="brand" href="{% url 'home' %}"><img src="{% static 'wtogether/img/victoria_logo.png' %}" alt="Victoria"><span><b>Victoria</b><small>Sistema Inteligente de Registro Activo</small><span class="victoria-by">by WTogether</span></span></a>
 {% if request.session.token %}
 <button class="menu-toggle" type="button" aria-label="Abrir menú" aria-controls="sira-nav" aria-expanded="false">☰</button>
 <nav id="sira-nav" aria-label="Navegación principal">
@@ -30,8 +52,8 @@
 <a href="{% url 'invitaciones' %}">Invitaciones</a>
 <a href="{% url 'grupos_admin' %}">Grupos</a>
 <a href="{% url 'usuarios' %}">Usuarios</a><a href="{% url 'roles' %}">Roles</a>
-<a class="exit" href="{% url 'salir' %}">Salir</a>
-</nav>
+<a href="/administracion/cancelaciones/">Cancelaciones</a>
+<a href="{% url 'salir' %}">Salir</a></nav>
 <button class="nav-overlay" type="button" aria-label="Cerrar menú"></button>
 {% endif %}
 </header>
@@ -44,5 +66,11 @@
 <a href="{% url 'salir' %}"><span>×</span><small>Salir</small></a>
 </nav>
 {% endif %}
-<footer>SIRA · Infosoft, C.A. · J-30984159-9</footer>
+
+{% block footer %}
+<footer class="victoria-system-footer">
+ <span><strong>Victoria by WTogether 2.0</strong></span>
+ <span>Tecnología desarrollada por Infosoft, C.A.</span>
+</footer>
+{% endblock %}
 </body></html>
