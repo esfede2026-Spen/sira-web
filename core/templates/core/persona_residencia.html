@@ -14,7 +14,7 @@
   <a href="{% url 'persona_editar' pid %}">Identificación</a>
   <a href="{% url 'persona_electoral' pid %}">Registro electoral</a>
   <a href="{% url 'persona_contacto' pid %}">Contacto</a>
-  <a class="active" href="{% url 'persona_residencia' pid %}">Territorio</a>
+  <a class="active" href="{% url 'persona_residencia' pid %}">Dirección</a>
   <a href="{% url 'persona_academico' pid %}">Datos académicos</a>
   <a href="{% url 'persona_grupos' pid %}">Grupos</a>
 </nav>
@@ -58,12 +58,17 @@
         {{ form.codigoPostalId.as_field_group }}
       </div>
 
-      <!-- Fila 3: Dirección Complementaria y Ubicación al lado -->
-      <div class="field-l" style="grid-column: span 6;">
+      <!-- Fila 3: Dirección Complementaria a lo ancho -->
+      <div class="field-xl" style="grid-column: 1 / -1;">
         {{ form.direccionComplementaria.as_field_group }}
       </div>
+
+      <!-- Fila 4: Ubicación al lado de País -->
       <div class="field-l" style="grid-column: span 6;">
         {{ form.ubicacion.as_field_group }}
+      </div>
+      <div class="field-l" style="grid-column: span 6;">
+        {{ form.paisNombre.as_field_group }}
       </div>
     </div>
 

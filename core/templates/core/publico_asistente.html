@@ -39,7 +39,7 @@
     <nav class="profile-tabs v41" style="margin-bottom: 1.75rem;">
       <a class="{% if seccion == 'personales' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='personales' %}">Identificación</a>
       <a class="{% if seccion == 'contacto' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='contacto' %}">Contacto</a>
-      <a class="{% if seccion == 'territorio' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='territorio' %}">Territorio</a>
+      <a class="{% if seccion == 'territorio' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='territorio' %}">Dirección</a>
       <a class="{% if seccion == 'academico' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='academico' %}">Datos académicos</a>
       <a class="{% if seccion == 'electoral' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='electoral' %}">Registro electoral</a>
       <a class="{% if seccion == 'grupos' %}active{% endif %}" href="{% url 'registro_publico_paso' token=token seccion='grupos' %}">Grupos</a>
@@ -392,7 +392,7 @@
       <!-- Botón para avanzar de Contacto a Territorio -->
       <div style="display: flex; justify-content: flex-end; margin-top: 1.5rem;">
         <a class="primary" href="{% url 'registro_publico_paso' token=token seccion='territorio' %}" style="background: #0057a8 !important; padding: 0.75rem 2rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; text-decoration: none; color: #fff;">
-          Continuar a Territorio →
+          Continuar a Dirección →
         </a>
       </div>
 
@@ -406,7 +406,7 @@
             <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
           </div>
           <div>
-            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Territorio y Residencia</h2>
+            <h2 style="font-size: 1.25rem; font-weight: 800; color: #06396f; margin: 0 0 0.15rem 0;">Dirección y Residencia</h2>
             <p style="font-size: 0.85rem; color: #64748b; margin: 0;">Indique su ubicación geográfica y dirección complementaria.</p>
           </div>
         </div>
@@ -466,17 +466,23 @@
               {% if form.codigoPostalId.errors %}<div class="field-error-text">{{ form.codigoPostalId.errors.0 }}</div>{% endif %}
             </div>
 
-            <!-- Fila 3: Dirección complementaria (span 6) y Ubicación al lado (span 6) -->
-            <div class="field-l field-group" style="grid-column: span 6;">
+            <!-- Fila 3: Dirección complementaria (span 12) -->
+            <div class="field-xl field-group" style="grid-column: 1 / -1;">
               <label for="{{ form.direccionComplementaria.id_for_label }}">Dirección complementaria:</label>
               {{ form.direccionComplementaria }}
               {% if form.direccionComplementaria.errors %}<div class="field-error-text">{{ form.direccionComplementaria.errors.0 }}</div>{% endif %}
             </div>
 
+            <!-- Fila 4: Ubicación al lado de País (span 6 cada uno) -->
             <div class="field-l field-group" style="grid-column: span 6;">
               <label for="{{ form.ubicacion.id_for_label }}">Ubicación (referencia geográfica):</label>
               {{ form.ubicacion }}
               {% if form.ubicacion.errors %}<div class="field-error-text">{{ form.ubicacion.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="field-l field-group" style="grid-column: span 6;">
+              <label for="id_pais_nombre">País:</label>
+              <input type="text" name="paisNombre" id="id_pais_nombre" value="{{ form.paisNombre.value|default:ctx.paisNombre|default:'Venezuela' }}" class="form-input" style="font-weight: 600;" placeholder="Ej. Venezuela">
             </div>
           </div>
 

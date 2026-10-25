@@ -69,7 +69,9 @@ def persona_nueva(request):
  try:nacs=api.get('/catalogos-v4/nacionalidades')
  except ApiError:nacs=[]
  ven=next((str(x['id_nacionalidad_catalogo']) for x in nacs if str(x.get('codigo','')).strip().upper()=='VE'),next((str(x['id_nacionalidad_catalogo']) for x in nacs),''))
- f=IdentificacionInicialForm(request.POST or None,initial={'nacionalidadCatalogoId':ven},nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'))
+ try:tipos_doc=api.get('/catalogos/tipos-documento')
+ except Exception:tipos_doc=[]
+ f=IdentificacionInicialForm(request.POST or None,initial={'nacionalidadCatalogoId':ven},nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'),tipos_documento=tipos_doc)
  if request.method=='POST' and f.is_valid():
   api=SiraApi(request);d=payload_persona(f.cleaned_data)
   try:
@@ -91,7 +93,9 @@ def persona_editar(request,pid):
  try:nacs=api.get('/catalogos-v4/nacionalidades')
  except ApiError:nacs=[]
  initial['nacionalidadCatalogoId']=p.get('id_nacionalidad_catalogo') or next((str(x['id_nacionalidad_catalogo']) for x in nacs if str(x.get('codigo','')).strip().upper()=='VE'),'');initial['consentimientoDatos']=p.get('consentimiento_datos')=='S'
- f=IdentificacionForm(request.POST or None,initial=initial,nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'))
+ try:tipos_doc=api.get('/catalogos/tipos-documento')
+ except Exception:tipos_doc=[]
+ f=IdentificacionForm(request.POST or None,initial=initial,nacionalidades=choices(nacs,'id_nacionalidad_catalogo','descripcion'),tipos_documento=tipos_doc)
  if request.method=='POST' and f.is_valid():
   try:api.put(f'/personas/{pid}',payload_persona(f.cleaned_data));messages.success(request,'Perfil actualizado. Continúe con contacto.');return redirect('persona_contacto',pid=pid)
   except ApiError as e:messages.error(request,str(e))
@@ -110,7 +114,9 @@ def persona_contacto(request,pid):
   t=r.get('tipo','').lower()
   if t=='x':redes_init['xTwitter']=r.get('valor','')
   else:redes_init[t]=r.get('valor','')
- ft=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=[(x['id_tipo_contacto'],x['descripcion']) for x in tipos],codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
+ try:paises_tel=api.get('/catalogos/paises-telefono')
+ except Exception:paises_tel=[]
+ ft=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=[(x['id_tipo_contacto'],x['descripcion']) for x in tipos],codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos],paises_telefono=paises_tel)
  fc=CorreoForm(request.POST if request.POST.get('accion')=='correo' else None)
  fr=RedSocialForm(request.POST if request.POST.get('accion')=='redes' else None,initial=redes_init)
  if request.method=='POST':
@@ -141,6 +147,7 @@ def persona_residencia(request,pid):
   except ApiError:return []
  ids={'paisId':val('paisId','id_pais'),'estadoId':val('estadoId','id_estado'),'ciudadId':val('ciudadId','id_ciudad'),'municipioId':val('municipioId','id_municipio'),'parroquiaId':val('parroquiaId','id_parroquia'),'tipoSectorId':val('tipoSectorId','id_tipo_sector_geografico'),'sectorId':val('sectorId','id_sector_geografico'),'codigoPostalId':val('codigoPostalId','id_codigo_postal')}
  est=get('/geografia/estados',{'paisId':ids['paisId']}) if ids['paisId'] else [];ciu=get('/geografia/ciudades',{'estadoId':ids['estadoId']}) if ids['estadoId'] else [];mun=get('/geografia/municipios',{'ciudadId':ids['ciudadId']}) if ids['ciudadId'] else [];par=get('/geografia/parroquias',{'municipioId':ids['municipioId']}) if ids['municipioId'] else [];tipsec=get('/geografia/tipos-sector');sec=get('/geografia/sectores',{'estadoId':ids['estadoId'],'ciudadId':ids['ciudadId'],'municipioId':ids['municipioId'],'parroquiaId':ids['parroquiaId'],'tipoSectorId':ids['tipoSectorId']}) if ids['tipoSectorId'] else [];cp=get('/geografia/codigos-postales',{'sectorId':ids['sectorId']}) if ids['sectorId'] else []
+ if ids['sectorId'] and not ids['codigoPostalId'] and len(cp)==1:ids['codigoPostalId']=str(cp[0]['id_codigo_postal'])
  ch={'paisId':choices(paises,'id_pais','desc_pais'),'estadoId':choices(est,'id_estado','desc_estado'),'ciudadId':choices(ciu,'id_ciudad','desc_ciudad'),'municipioId':choices(mun,'id_municipio','desc_municipio'),'parroquiaId':choices(par,'id_parroquia','desc_parroquia'),'tipoSectorId':choices(tipsec,'id_tipo_sector_geografico','desc_tipo_sector_geografico'),'sectorId':choices(sec,'id_sector_geografico','desc_sector_geografico'),'codigoPostalId':choices(cp,'id_codigo_postal','codigo_postal')}
  initial={**ids,'direccionComplementaria':source.get('direccionComplementaria') or r.get('direccion_complementaria',''),'ubicacion':source.get('ubicacion') or r.get('ubicacion','')};form=ResidenciaForm(request.POST or None,initial=initial,choices=ch)
  if request.method=='POST' and form.is_valid():
@@ -236,6 +243,10 @@ def registro_publico(request,token):
 
   if accion in ('confirmar','salir_ahora'):
    form_data=request.session.get('registro_publico_form_data') or {}
+   draft=request.session.get('registro_publico_draft') or {}
+   for k in ('primerNombre','segundoNombre','primerApellido','segundoApellido'):
+    if draft.get(k) and not form_data.get(k):
+     form_data[k]=draft.get(k)
    if not form_data:
     messages.error(request,'Sesión expirada o datos no encontrados. Por favor complete el formulario inicial.')
     return redirect('registro_publico',token=token)
@@ -248,6 +259,8 @@ def registro_publico(request,token):
    if s_nom: form_data['segundoNombre']=s_nom
    if p_ape: form_data['primerApellido']=p_ape
    if s_ape: form_data['segundoApellido']=s_ape
+   for fld in ('paisNombre','pais','codigoPaisGeo','latitud','longitud','precisionMetros','ubicacion'):
+    if request.POST.get(fld): form_data[fld]=request.POST.get(fld)
 
    if not form_data.get('primerNombre') or not form_data.get('primerApellido'):
     messages.error(request,'Es obligatorio indicar al menos un nombre y un apellido para completar el registro.')
@@ -260,8 +273,12 @@ def registro_publico(request,token):
      request.session['registro_publico_draft']=draft
     try:codigos=api.get('/publico/invitaciones/codigos-telefonicos')
     except ApiError:codigos=[]
-    f=RegistroPublicoInicialForm(initial=form_data,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
-    return render(request,'core/registro_publico.html',{'inv':inv,'token':token,'form':f,'resultado':draft,'codigos_catalogo':codigos})
+    try:tipos_doc=api.get('/publico/invitaciones/tipos-documento')
+    except Exception:tipos_doc=[]
+    try:paises_tel=api.get('/publico/invitaciones/paises-telefono')
+    except Exception:paises_tel=[]
+    f=RegistroPublicoInicialForm(initial=form_data,tipos_documento=tipos_doc,paises_telefono=paises_tel,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
+    return render(request,'core/registro_publico.html',{'inv':inv,'token':token,'form':f,'resultado':draft,'codigos_catalogo':codigos,'paises_telefono':paises_tel,'tipos_documento':tipos_doc})
 
    try:
     resultado=api.post('/publico/invitaciones/confirmar',form_data)
@@ -291,9 +308,13 @@ def registro_publico(request,token):
 
  try:codigos=api.get('/publico/invitaciones/codigos-telefonicos')
  except ApiError as e:codigos=[];messages.error(request,'No se pudo cargar código telefónico desde SIRA API: '+str(e))
+ try:tipos_doc=api.get('/publico/invitaciones/tipos-documento')
+ except Exception:tipos_doc=[]
+ try:paises_tel=api.get('/publico/invitaciones/paises-telefono')
+ except Exception:paises_tel=[]
 
  initial_public=request.session.get('registro_publico_form_data')
- f=RegistroPublicoInicialForm(request.POST or None,initial=initial_public,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
+ f=RegistroPublicoInicialForm(request.POST or None,initial=initial_public,tipos_documento=tipos_doc,paises_telefono=paises_tel,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
  draft=request.session.get('registro_publico_draft')
 
  if request.method=='POST' and not request.POST.get('accion') and f.is_valid():
@@ -312,7 +333,7 @@ def registro_publico(request,token):
     messages.error(request,str(e))
     _nuevo_captcha_publico(request)
 
- return render(request,'core/registro_publico.html',{'inv':inv,'token':token,'form':f,'resultado':draft,'codigos_catalogo':codigos})
+ return render(request,'core/registro_publico.html',{'inv':inv,'token':token,'form':f,'resultado':draft,'codigos_catalogo':codigos,'paises_telefono':paises_tel,'tipos_documento':tipos_doc})
 
 def _nuevo_captcha_publico(request):
  code="".join(random.choice("ABCDEFGHJKLMNPQRSTUVWXYZ23456789") for _ in range(5));request.session['captcha_publico']=code;return code
@@ -419,7 +440,10 @@ PUBLIC_STEPS=['personales','contacto','territorio','academico','electoral','grup
 def registro_publico_paso(request,token,seccion):
  if seccion not in PUBLIC_STEPS:return redirect('registro_publico_paso',token=token,seccion='personales')
  api=SiraApi(request)
- try:ctx=api.get(f"/publico/invitaciones/{token}/contexto?usoId={request.session.get('registro_publico_uso_id','')}")
+ uso_id=request.session.get('registro_publico_uso_id') or 0
+ try:
+  ctx=api.get(f"/publico/invitaciones/{token}/contexto?usoId={uso_id}")
+  if 'usoId' in ctx and not request.session.get('registro_publico_uso_id'):request.session['registro_publico_uso_id']=ctx['usoId']
  except ApiError as e:return render(request,'core/publico_asistente.html',{'error':str(e),'token':token,'seccion':seccion,'steps':PUBLIC_STEPS})
  form=form2=form_redes=None;catalogos={};codigos_catalogo=[];redes_list=[]
  try:
@@ -427,7 +451,9 @@ def registro_publico_paso(request,token,seccion):
    ns=api.get('/publico/invitaciones/catalogos/nacionalidades');sx=api.get('/publico/invitaciones/catalogos/sexos');p=ctx['persona']
    fn=formatear_fecha_es(p.get('fecha_nacimiento'))
    initial={'paisEmisorId':p.get('id_pais_emisor'),'tipoDocumentoId':p.get('id_tipo_documento'),'documentoNumero':p.get('documento_numero'),'primerNombre':p.get('primer_nombre'),'segundoNombre':p.get('segundo_nombre'),'primerApellido':p.get('primer_apellido'),'segundoApellido':p.get('segundo_apellido'),'aliasApodo':p.get('alias_apodo'),'sexoId':p.get('id_sexo'),'fechaNacimiento':fn,'nacionalidadCatalogoId':p.get('id_nacionalidad_catalogo'),'consentimientoDatos':True}
-   form=IdentificacionForm(request.POST or None,initial=initial,nacionalidades=choices(ns,'id_nacionalidad_catalogo','descripcion'),sexos=choices(sx,'id_sexo','descripcion'))
+   try:tipos_doc=api.get('/publico/invitaciones/tipos-documento')
+   except Exception:tipos_doc=[]
+   form=IdentificacionForm(request.POST or None,initial=initial,nacionalidades=choices(ns,'id_nacionalidad_catalogo','descripcion'),sexos=choices(sx,'id_sexo','descripcion'),tipos_documento=tipos_doc)
    if request.method=='POST' and form.is_valid():
     api.put(f'/publico/invitaciones/{token}/personales?usoId={request.session.get("registro_publico_uso_id","")}',payload_persona(form.cleaned_data))
     return redirect('registro_publico_paso',token=token,seccion='contacto')
@@ -441,7 +467,9 @@ def registro_publico_paso(request,token,seccion):
     t=r.get('tipo','').lower()
     if t=='x':redes_init['xTwitter']=r.get('valor','')
     else:redes_init[t]=r.get('valor','')
-   form=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=choices(tipos,'id_tipo_contacto','descripcion'),codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
+   try:paises_tel=api.get('/publico/invitaciones/paises-telefono')
+   except Exception:paises_tel=[]
+   form=TelefonoForm(request.POST if request.POST.get('accion')=='telefono' else None,tipos=choices(tipos,'id_tipo_contacto','descripcion'),codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos],paises_telefono=paises_tel)
    form2=CorreoForm(request.POST if request.POST.get('accion')=='correo' else None,prefix='correo')
    form_redes=RedSocialForm(request.POST if request.POST.get('accion')=='redes' else None,initial=redes_init)
    if request.method=='POST':
@@ -460,11 +488,19 @@ def registro_publico_paso(request,token,seccion):
    g=ctx.get('residencia') or {};src=request.POST if request.method=='POST' else g
    def vv(n,o):return src.get(n) or src.get(o) or ''
    ids={'paisId':vv('paisId','id_pais'),'estadoId':vv('estadoId','id_estado'),'ciudadId':vv('ciudadId','id_ciudad'),'municipioId':vv('municipioId','id_municipio'),'parroquiaId':vv('parroquiaId','id_parroquia'),'tipoSectorId':vv('tipoSectorId','id_tipo_sector_geografico'),'sectorId':vv('sectorId','id_sector_geografico'),'codigoPostalId':vv('codigoPostalId','id_codigo_postal')}
+   if not ids['paisId']: ids['paisId']=str(ctx.get('paisId') or '1')
    pais=api.get('/publico/invitaciones/geografia/paises');tipsec=api.get('/publico/invitaciones/geografia/tipos-sector');est=api.get('/publico/invitaciones/geografia/estados',{'paisId':ids['paisId']}) if ids['paisId'] else [];ciu=api.get('/publico/invitaciones/geografia/ciudades',{'estadoId':ids['estadoId']}) if ids['estadoId'] else [];mun=api.get('/publico/invitaciones/geografia/municipios',{'ciudadId':ids['ciudadId']}) if ids['ciudadId'] else [];par=api.get('/publico/invitaciones/geografia/parroquias',{'municipioId':ids['municipioId']}) if ids['municipioId'] else [];sec=api.get('/publico/invitaciones/geografia/sectores',{'estadoId':ids['estadoId'],'ciudadId':ids['ciudadId'],'municipioId':ids['municipioId'],'parroquiaId':ids['parroquiaId'],'tipoSectorId':ids['tipoSectorId']}) if ids['tipoSectorId'] else [];cp=api.get('/publico/invitaciones/geografia/codigos-postales',{'sectorId':ids['sectorId']}) if ids['sectorId'] else []
+   if ids['sectorId'] and not ids['codigoPostalId'] and len(cp)==1:ids['codigoPostalId']=str(cp[0]['id_codigo_postal'])
    ch={'paisId':choices(pais,'id_pais','desc_pais'),'estadoId':choices(est,'id_estado','desc_estado'),'ciudadId':choices(ciu,'id_ciudad','desc_ciudad'),'municipioId':choices(mun,'id_municipio','desc_municipio'),'parroquiaId':choices(par,'id_parroquia','desc_parroquia'),'tipoSectorId':choices(tipsec,'id_tipo_sector_geografico','desc_tipo_sector_geografico'),'sectorId':choices(sec,'id_sector_geografico','desc_sector_geografico'),'codigoPostalId':choices(cp,'id_codigo_postal','codigo_postal')}
    ubi_val=src.get('ubicacion') or g.get('ubicacion') or ctx.get('ubicacion') or ctx.get('ubicacionReferencia') or ctx.get('persona',{}).get('ubicacionReferencia','')
-   initial={**ids,'direccionComplementaria':src.get('direccionComplementaria') or g.get('direccion_complementaria',''),'ubicacion':ubi_val};form=ResidenciaForm(request.POST or None,initial=initial,choices=ch)
-   if request.method=='POST' and request.POST.get('accion')=='guardar' and form.is_valid():api.put(f'/publico/invitaciones/{token}/territorio?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='academico')
+   pais_val=src.get('paisNombre') or src.get('pais') or g.get('desc_pais') or ctx.get('paisNombre') or ctx.get('pais') or 'Venezuela'
+   initial={**ids,'direccionComplementaria':src.get('direccionComplementaria') or g.get('direccion_complementaria',''),'ubicacion':ubi_val,'paisNombre':pais_val}
+   form=ResidenciaForm(request.POST or None,initial=initial,choices=ch)
+   if request.method=='POST' and request.POST.get('accion')=='guardar' and form.is_valid():
+    payload_terr=dict(form.cleaned_data)
+    payload_terr['paisNombre']=request.POST.get('paisNombre') or form.cleaned_data.get('paisNombre') or pais_val
+    api.put(f'/publico/invitaciones/{token}/territorio?usoId={request.session.get("registro_publico_uso_id","")}',payload_terr)
+    return redirect('registro_publico_paso',token=token,seccion='academico')
   elif seccion=='academico':
    d=ctx.get('academico') or {}
    try:titulos=choices(api.get('/publico/invitaciones/catalogos/titulos'),'id_titulo','descripcion')

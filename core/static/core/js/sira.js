@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded',()=>{
    const r=await fetch(`${f.dataset.geoUrl}${tipo}/?${new URLSearchParams(clean)}`);
    if(!r.ok)throw new Error();
    const data=await r.json();data.forEach(x=>e.add(new Option(x[nk],x[idk])));
+   if(tipo==='codigos-postales'&&data.length===1){
+     e.value=String(data[0][idk]);
+   }
   }catch{console.error('No se pudo cargar '+tipo)}
  }
  if($('tipoSectorId')&&$('tipoSectorId').options.length<=1)load('tipos-sector',{},'tipoSectorId','id_tipo_sector_geografico','desc_tipo_sector_geografico');
@@ -155,13 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const updateCountryState = () => {
       const isVe = !paisSelect || paisSelect.value === '+58' || paisSelect.value === '';
+      areaInput.placeholder = isVe ? '412' : 'Área';
+      areaInput.maxLength = 3;
+      areaInput.minLength = 3;
+      areaInput.setAttribute('pattern', '\\d{3}');
+      if (numInput) {
+        numInput.placeholder = '7 dígitos';
+        numInput.maxLength = 7;
+        numInput.minLength = 7;
+        numInput.setAttribute('pattern', '\\d{7}');
+      }
       if (isVe) {
-        areaInput.placeholder = '412';
-        areaInput.maxLength = 5;
-        if (numInput) {
-          numInput.placeholder = '1234567';
-          numInput.maxLength = 7;
-        }
         const currentVal = areaInput.value.trim().replace(/^0+/, '');
         if (!currentVal) {
           renderOptions(VENEZUELA_MOBILES);
@@ -169,12 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
           filterVeCodes(currentVal);
         }
       } else {
-        areaInput.placeholder = 'Área';
-        areaInput.maxLength = 6;
-        if (numInput) {
-          numInput.placeholder = 'Número';
-          numInput.maxLength = 15;
-        }
         renderOptions([]);
       }
     };
@@ -204,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
     areaInput.addEventListener('input', (e) => {
       let val = e.target.value;
       val = val.replace(/^0+/, '').replace(/\D/g, '');
+      if (val.length > 3) {
+        val = val.substring(0, 3);
+      }
       if (e.target.value !== val) {
         e.target.value = val;
       }
@@ -216,11 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (numInput) {
       numInput.addEventListener('input', (e) => {
         let val = e.target.value.replace(/\D/g, '');
-        const isVe = !paisSelect || paisSelect.value === '+58' || paisSelect.value === '';
-        if (isVe && val.length > 7) {
-          val = val.slice(0, 7);
-        } else if (!isVe && val.length > 15) {
-          val = val.slice(0, 15);
+        if (val.length > 7) {
+          val = val.substring(0, 7);
         }
         if (e.target.value !== val) {
           e.target.value = val;
