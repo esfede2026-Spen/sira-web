@@ -7,20 +7,50 @@
 
 <style>
 @media (max-width: 768px) {
-  #form-registro-inicial .sprint2-grid-12 {
-    display: flex !important;
+  .reg-row-1 {
+    gap: 0.55rem !important;
+  }
+  .reg-tipo-doc {
+    flex: 0 0 75px !important;
+    width: 75px !important;
+  }
+  .reg-doc-num {
+    flex: 1 1 calc(100% - 90px) !important;
+    width: auto !important;
+  }
+  .reg-cod-pais {
+    flex: 0 0 80px !important;
+    width: 80px !important;
+  }
+  .reg-cod-area {
+    flex: 0 0 70px !important;
+    width: 70px !important;
+  }
+  .reg-tel-num {
+    flex: 1 1 calc(100% - 170px) !important;
+    width: auto !important;
+  }
+  .reg-row-correo {
+    max-width: 100% !important;
+  }
+  .reg-row-captcha {
+    gap: 0.65rem !important;
+  }
+  .reg-captcha-input-group {
+    flex: 1 1 140px !important;
+  }
+  .reg-row-checks {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.65rem !important;
+  }
+  .reg-row-ubicacion {
     flex-direction: column !important;
     gap: 0.65rem !important;
   }
-  #form-registro-inicial .field-group {
-    grid-column: auto !important;
+  .reg-ubicacion-input, .reg-pais-input {
     width: 100% !important;
-    max-width: 100% !important;
-    box-sizing: border-box !important;
-  }
-  #form-registro-inicial .phone-code-inputs {
-    width: 100% !important;
-    box-sizing: border-box !important;
+    flex: 1 1 100% !important;
   }
   .resumen-actions-container {
     flex-wrap: wrap !important;
@@ -208,107 +238,112 @@
           {% csrf_token %}
           {{ form.non_field_errors }}
           
-          <div class="sprint2-grid-12" style="gap: 0.6rem 0.75rem; margin-bottom: 0.75rem;">
+          <!-- Fila 1: Tipo Documento, N.° de documento, Código País, Código Área (Operadora), Teléfono -->
+          <div class="reg-row-1" style="display: flex; gap: 0.65rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0.85rem;">
             
-            <!-- Fila 1: Documento -->
-            <div class="field-s field-group" style="grid-column: span 5;">
-              <label for="{{ form.tipoDocumentoId.id_for_label }}">Tipo de documento *</label>
+            <div class="reg-tipo-doc" style="flex: 0 0 68px; width: 68px;">
+              <label for="{{ form.tipoDocumentoId.id_for_label }}" style="font-size: 0.84rem; font-weight: 700; color: #06396f; margin-bottom: 0.3rem; display: block;">Tipo *</label>
               {{ form.tipoDocumentoId }}
               {% if form.tipoDocumentoId.errors %}<div class="field-error-text">{{ form.tipoDocumentoId.errors.0 }}</div>{% endif %}
             </div>
 
-            <div class="field-sm field-group" style="grid-column: span 7;">
-              <label for="{{ form.documentoNumero.id_for_label }}">N.º de documento *</label>
+            <div class="reg-doc-num" style="flex: 0 0 155px; width: 155px;">
+              <label for="{{ form.documentoNumero.id_for_label }}" style="font-size: 0.84rem; font-weight: 700; color: #06396f; margin-bottom: 0.3rem; display: block;">N.° de documento *</label>
               {{ form.documentoNumero }}
               {% if form.documentoNumero.errors %}<div class="field-error-text">{{ form.documentoNumero.errors.0 }}</div>{% endif %}
             </div>
 
-            <!-- Fila 2: Teléfono compuesto con Selector de País con Búsqueda y Operador VE -->
-            <div class="field-s field-group phone-code-cell" style="grid-column: span 5;">
-              <label for="id_codigo_pais">Código *</label>
-              <div class="phone-code-inputs" style="display: flex; gap: 0.35rem; align-items: stretch; position: relative;">
-                <input type="hidden" name="codigoPais" id="id_codigo_pais" value="{{ form.codigoPais.value|default:'+58' }}">
-                <button type="button" id="btn-picker-pais" class="btn-country-picker" style="min-width: 80px; height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0 8px; border: 1px solid #c8d8e6; border-radius: 6px; background: #f8fafc; font-weight: 700; color: #06396f; font-size: 0.88rem; cursor: pointer; white-space: nowrap;">
-                  <span id="txt-selected-pais">{{ form.codigoPais.value|default:'+58' }}</span>
-                  <span style="font-size: 0.72rem; color: #64748b;">▼</span>
+            <div class="reg-cod-pais" style="flex: 0 0 78px; width: 78px;">
+              <label for="id_codigo_pais" style="font-size: 0.84rem; font-weight: 700; color: #06396f; margin-bottom: 0.3rem; display: block;">Código *</label>
+              <input type="hidden" name="codigoPais" id="id_codigo_pais" value="{{ form.codigoPais.value|default:'+58' }}">
+              <button type="button" id="btn-picker-pais" class="btn-country-picker" style="width: 100%; height: 38px; display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 0 8px; border: 1px solid #c8d8e6; border-radius: 6px; background: #ffffff; font-weight: 700; color: #06396f; font-size: 0.88rem; cursor: pointer; white-space: nowrap;">
+                <span id="txt-selected-pais">{{ form.codigoPais.value|default:'+58' }}</span>
+                <span style="font-size: 0.68rem; color: #64748b;">▼</span>
+              </button>
+            </div>
+
+            <div class="reg-cod-area" style="flex: 0 0 85px; width: 85px; position: relative;">
+              <label style="font-size: 0.84rem; font-weight: 700; color: transparent; margin-bottom: 0.3rem; display: block; user-select: none;">&nbsp;</label>
+              <div style="position: relative; width: 100%;">
+                <input type="text" name="codigoArea" id="id_codigo_area" value="{{ form.codigoArea.value|default:'' }}" maxlength="3" pattern="\d{3}" inputmode="numeric" placeholder="123" autocomplete="off" class="field-cod-area" style="width: 100%; height: 38px; padding: 0.4rem 18px 0.4rem 6px; border: 1px solid #c8d8e6; border-radius: 6px; font-size: 0.92rem; font-weight: 700; color: #06396f; text-align: center; box-sizing: border-box;" required>
+                <button type="button" id="btn-picker-operador" title="Seleccionar operador" style="position: absolute; right: 2px; top: 2px; bottom: 2px; background: transparent; border: none; padding: 0 4px; color: #64748b; font-size: 0.65rem; cursor: pointer; display: flex; align-items: center;">
+                  ▼
                 </button>
-                <div style="position: relative; flex: 1; display: flex;">
-                  <input type="text" name="codigoArea" id="id_codigo_area" value="{{ form.codigoArea.value|default:'412' }}" maxlength="3" pattern="\d{3}" inputmode="numeric" placeholder="412" autocomplete="off" class="field-cod-area" style="width: 100%; height: 38px; padding: 0.4rem 1.6rem 0.4rem 0.6rem; border: 1px solid #c8d8e6; border-radius: 6px; font-size: 0.92rem;" required>
-                  <button type="button" id="btn-picker-operador" title="Seleccionar operador" style="position: absolute; right: 2px; top: 2px; bottom: 2px; background: #eef6fc; border: none; border-radius: 4px; padding: 0 5px; color: #0057a8; font-size: 0.72rem; font-weight: 700; cursor: pointer; display: flex; align-items: center;">
-                    ▼
-                  </button>
-                </div>
               </div>
               {% if form.codigoArea.errors %}<div class="field-error-text">{{ form.codigoArea.errors.0 }}</div>{% endif %}
             </div>
 
-            <div class="field-sm field-group phone-number-cell" style="grid-column: span 7;">
-              <label for="id_numero">Teléfono *</label>
-              <input type="text" name="numero" id="id_numero" value="{{ form.numero.value|default:'' }}" maxlength="7" minlength="7" pattern="\d{7}" inputmode="numeric" placeholder="7 dígitos" class="field-telefono-num" style="width: 100%; height: 38px; padding: 0.4rem 0.6rem; border: 1px solid #c8d8e6; border-radius: 6px; font-size: 0.92rem;" required>
+            <div class="reg-tel-num" style="flex: 0 0 135px; width: 135px;">
+              <label for="id_numero" style="font-size: 0.84rem; font-weight: 700; color: #06396f; margin-bottom: 0.3rem; display: block;">Teléfono *</label>
+              <input type="text" name="numero" id="id_numero" value="{{ form.numero.value|default:'' }}" maxlength="7" minlength="7" pattern="\d{7}" inputmode="numeric" placeholder="1234567" class="field-telefono-num" style="width: 100%; height: 38px; padding: 0.4rem 0.6rem; border: 1px solid #c8d8e6; border-radius: 6px; font-size: 0.92rem; box-sizing: border-box;" required>
               {% if form.numero.errors %}<div class="field-error-text">{{ form.numero.errors.0 }}</div>{% endif %}
             </div>
 
-            <!-- Fila 3: Correo -->
-            <div class="field-xl field-group" style="grid-column: 1 / -1;">
-              <label for="{{ form.correo.id_for_label }}">Correo electrónico *</label>
-              {{ form.correo }}
-              {% if form.correo.errors %}<div class="field-error-text">{{ form.correo.errors.0 }}</div>{% endif %}
-            </div>
+          </div>
 
-            <!-- Fila 4: Captcha y Código de seguridad -->
-            <div class="field-l field-group" style="grid-column: span 6;">
-              <label style="display: block; font-weight: 700; color: #06396f; font-size: 0.82rem; margin-bottom: 0.25rem;">Validación de seguridad</label>
+          <!-- Fila 2: Correo electrónico -->
+          <div class="reg-row-correo" style="max-width: 360px; width: 100%; margin-bottom: 0.85rem;">
+            <label for="{{ form.correo.id_for_label }}" style="font-size: 0.84rem; font-weight: 700; color: #06396f; margin-bottom: 0.3rem; display: block;">Correo electrónico *</label>
+            {{ form.correo }}
+            {% if form.correo.errors %}<div class="field-error-text">{{ form.correo.errors.0 }}</div>{% endif %}
+          </div>
+
+          <!-- Fila 3: Validación de seguridad y Código de seguridad -->
+          <div class="reg-row-captcha" style="display: flex; gap: 1.25rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 0.85rem;">
+            
+            <div class="reg-captcha-img-group" style="flex: 0 0 auto;">
+              <label style="display: block; font-weight: 700; color: #06396f; font-size: 0.84rem; margin-bottom: 0.3rem;">Validación de seguridad</label>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <img id="img-captcha-publico" src="{% url 'captcha_publico_imagen' %}?v={{ request.session.captcha_publico }}" alt="Captcha" style="border: 1px solid #c8d8e6; border-radius: 6px; height: 38px;">
-                <button type="button" onclick="document.getElementById('img-captcha-publico').src='{% url 'captcha_publico_imagen' %}?v='+Math.random()" style="background: none; border: 1px solid #d0e0ed; border-radius: 6px; padding: 0.4rem 0.6rem; color: #0057a8; font-weight: 700; font-size: 0.8rem; cursor: pointer;">
+                <button type="button" onclick="document.getElementById('img-captcha-publico').src='{% url 'captcha_publico_imagen' %}?v='+Math.random()" style="background: #ffffff; border: 1px solid #c8d8e6; border-radius: 6px; height: 38px; padding: 0 0.75rem; color: #0057a8; font-weight: 700; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 0.35rem;">
                   🔄 Actualizar
                 </button>
               </div>
             </div>
 
-            <div class="field-l field-group" style="grid-column: span 6;">
-              <label for="{{ form.captcha.id_for_label }}">Código de seguridad *</label>
+            <div class="reg-captcha-input-group" style="flex: 0 0 165px; width: 165px;">
+              <label for="{{ form.captcha.id_for_label }}" style="display: block; font-weight: 700; color: #06396f; font-size: 0.84rem; margin-bottom: 0.3rem;">Código de seguridad *</label>
               {{ form.captcha }}
               {% if form.captcha.errors %}<div class="field-error-text">{{ form.captcha.errors.0 }}</div>{% endif %}
             </div>
 
-            <!-- Fila 5: Consentimiento -->
-            <div class="field-xl field-group" style="grid-column: 1 / -1; margin-top: 0.15rem;">
-              <label class="check-inline" style="font-size: 0.85rem; color: #06396f; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
-                {{ form.consentimientoDatos }}
-                <span>Acepto y doy consentimiento para el uso de mis datos</span>
-              </label>
-              {% if form.consentimientoDatos.errors %}<div class="field-error-text">{{ form.consentimientoDatos.errors.0 }}</div>{% endif %}
-            </div>
+          </div>
 
-            <!-- Fila 6: Ubicación de referencia, País completo y Autorizo ubicación -->
-            <div class="field-m field-group" style="grid-column: span 5;">
-              <label for="id_ubicacion">Ubicación (referencia opcional):</label>
+          <!-- Fila 4: Checkboxes en una sola línea -->
+          <div class="reg-row-checks" style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.85rem; margin-top: 0.25rem;">
+            <label class="check-inline" style="font-size: 0.84rem; font-weight: 700; color: #06396f; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
+              {{ form.consentimientoDatos }}
+              <span>Acepto y doy consentimiento para el uso de mis datos</span>
+            </label>
+            <label class="check-inline" style="font-size: 0.84rem; font-weight: 700; color: #06396f; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
+              {{ form.autorizaUbicacion }}
+              <span>Autorizo ubicación</span>
+            </label>
+            {% if form.consentimientoDatos.errors %}<div class="field-error-text">{{ form.consentimientoDatos.errors.0 }}</div>{% endif %}
+          </div>
+
+          <!-- Fila 5: Ubicación de referencia y País -->
+          <div class="reg-row-ubicacion" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-bottom: 1.15rem;">
+            <div class="reg-ubicacion-input" style="flex: 1 1 320px;">
+              <label for="id_ubicacion" style="font-size: 0.84rem; font-weight: 700; color: #06396f; margin-bottom: 0.3rem; display: block;">Ubicación (referencia opcional):</label>
               {{ form.ubicacion }}
             </div>
 
-            <div class="field-s field-group" style="grid-column: span 4;">
-              <label for="id_pais_nombre">País:</label>
+            <div class="reg-pais-input" style="flex: 1 1 240px;">
+              <label for="id_pais_nombre" style="font-size: 0.84rem; font-weight: 700; color: #06396f; margin-bottom: 0.3rem; display: block;">País:</label>
               {{ form.paisNombre }}
             </div>
-
-            <div class="field-s field-group" style="grid-column: span 3; display: flex; flex-direction: column; justify-content: flex-end; padding-bottom: 0.25rem;">
-              <label class="check-inline" style="font-size: 0.82rem; color: #06396f; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
-                {{ form.autorizaUbicacion }}
-                <span>Autorizo ubicación</span>
-              </label>
-            </div>
-            {{ form.codigoPaisGeo }}
-
-            {{ form.latitud }}
-            {{ form.longitud }}
-            {{ form.precisionMetros }}
-            {{ form.nacionalidadCatalogoId }}
-            {{ form.codigoTelefonicoId }}
           </div>
 
+          {{ form.codigoPaisGeo }}
+          {{ form.latitud }}
+          {{ form.longitud }}
+          {{ form.precisionMetros }}
+          {{ form.nacionalidadCatalogoId }}
+          {{ form.codigoTelefonicoId }}
+
           <div style="margin-top: 0.85rem;">
-            <button type="submit" class="primary full" style="width: 100%; background: #0057a8 !important; padding: 0.75rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer;">
+            <button type="submit" class="primary full" style="width: 100%; background: #0057a8 !important; padding: 0.75rem; font-size: 0.95rem; font-weight: 700; border-radius: 8px; border: none; cursor: pointer; color: #ffffff;">
               Continuar
             </button>
           </div>
@@ -320,6 +355,14 @@
   {% endif %}
 </div>
 
+
+<!-- Catálogo de Países y Códigos Telefónicos -->
+{% if paises_telefono %}
+{{ paises_telefono|json_script:"sira-paises-catalogo" }}
+{% endif %}
+{% if codigos_catalogo %}
+{{ codigos_catalogo|json_script:"sira-codigos-catalogo" }}
+{% endif %}
 
 <!-- Modal / Diálogo de Búsqueda Rápida de Países (190+ Países) -->
 <div id="modal-picker-paises" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(6, 35, 68, 0.55); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1rem;">
@@ -337,18 +380,14 @@
   </div>
 </div>
 
-<!-- Menú flotante de Operadores para Venezuela (+58) -->
-<div id="menu-picker-operador" style="display: none; position: fixed; z-index: 99998; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 155px; max-height: 220px; overflow-y: auto;">
-  <div style="padding: 6px 10px; font-size: 0.75rem; font-weight: 700; color: #64748b; background: #f8fafc; border-bottom: 1px solid #e2e8f0;">Operadores VE</div>
-  <div class="item-operador" data-op="412" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">412 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Digitel)</span></div>
-  <div class="item-operador" data-op="414" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">414 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Movistar)</span></div>
-  <div class="item-operador" data-op="424" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">424 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Movistar)</span></div>
-  <div class="item-operador" data-op="416" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">416 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Movilnet)</span></div>
-  <div class="item-operador" data-op="426" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">426 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Movilnet)</span></div>
-  <div class="item-operador" data-op="422" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">422 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Digitel)</span></div>
-  <div class="item-operador" data-op="212" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">212 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Caracas)</span></div>
-  <div class="item-operador" data-op="241" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer; border-bottom: 1px solid #f1f5f9;">241 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Valencia)</span></div>
-  <div class="item-operador" data-op="261" style="padding: 7px 12px; font-size: 0.88rem; font-weight: 700; color: #06396f; cursor: pointer;">261 <span style="font-size:0.75rem; font-weight:normal; color:#64748b;">(Maracaibo)</span></div>
+<!-- Menú flotante de Operadores Móviles para Venezuela (+58) -->
+<div id="menu-picker-operador" style="display: none; position: fixed; z-index: 99998; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); width: 85px; max-height: 220px; overflow-y: auto;">
+  <div class="item-operador" data-op="412" style="padding: 7px 10px; font-size: 0.92rem; font-weight: 700; color: #06396f; cursor: pointer; text-align: center; border-bottom: 1px solid #f1f5f9;">412</div>
+  <div class="item-operador" data-op="422" style="padding: 7px 10px; font-size: 0.92rem; font-weight: 700; color: #06396f; cursor: pointer; text-align: center; border-bottom: 1px solid #f1f5f9;">422</div>
+  <div class="item-operador" data-op="414" style="padding: 7px 10px; font-size: 0.92rem; font-weight: 700; color: #06396f; cursor: pointer; text-align: center; border-bottom: 1px solid #f1f5f9;">414</div>
+  <div class="item-operador" data-op="424" style="padding: 7px 10px; font-size: 0.92rem; font-weight: 700; color: #06396f; cursor: pointer; text-align: center; border-bottom: 1px solid #f1f5f9;">424</div>
+  <div class="item-operador" data-op="416" style="padding: 7px 10px; font-size: 0.92rem; font-weight: 700; color: #06396f; cursor: pointer; text-align: center; border-bottom: 1px solid #f1f5f9;">416</div>
+  <div class="item-operador" data-op="426" style="padding: 7px 10px; font-size: 0.92rem; font-weight: 700; color: #06396f; cursor: pointer; text-align: center;">426</div>
 </div>
 <!-- Script de geocodificación inversa con OpenStreetMap Nominatim -->
 <script>
@@ -433,7 +472,6 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   });
-});
 
   // Gestión de Selector de País con Búsqueda (190+ Países)
   const btnPickerPais = document.getElementById('btn-picker-pais');
@@ -449,42 +487,36 @@ document.addEventListener('DOMContentLoaded', function() {
   const idNumero = document.getElementById('id_numero');
 
   let catalogoPaises = [];
-  try {
-    fetch('/api/v1/publico/invitaciones/paises-telefono')
-      .then(res => res.json())
-      .then(data => {
-        catalogoPaises = data;
-        renderizarPaises(data);
-      })
-      .catch(() => {
-        // Fallback si la API interna se llama a traves de BFF
-        catalogoPaises = [
-          {codigo_pais: '+58', desc_pais: 'Venezuela'},
-          {codigo_pais: '+1', desc_pais: 'Estados Unidos / Canadá'},
-          {codigo_pais: '+34', desc_pais: 'España'},
-          {codigo_pais: '+57', desc_pais: 'Colombia'},
-          {codigo_pais: '+54', desc_pais: 'Argentina'},
-          {codigo_pais: '+56', desc_pais: 'Chile'},
-          {codigo_pais: '+51', desc_pais: 'Perú'},
-          {codigo_pais: '+52', desc_pais: 'México'},
-          {codigo_pais: '+507', desc_pais: 'Panamá'}
-        ];
-        renderizarPaises(catalogoPaises);
-      });
-  } catch(e){}
+  function obtenerCatalogoPaises() {
+    if (catalogoPaises && catalogoPaises.length > 0) return catalogoPaises;
+    const scriptPaises = document.getElementById('sira-paises-catalogo');
+    if (scriptPaises) {
+      try {
+        const parsed = JSON.parse(scriptPaises.textContent);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          catalogoPaises = parsed;
+          return catalogoPaises;
+        }
+      } catch(e) {
+        console.warn('Error parseando sira-paises-catalogo', e);
+      }
+    }
+    return catalogoPaises || [];
+  }
 
   function renderizarPaises(lista) {
     if (!listaPaisesScroll) return;
     listaPaisesScroll.innerHTML = '';
-    if (lista.length === 0) {
-      listaPaisesScroll.innerHTML = '<div style="padding: 12px; color: #94a3b8; text-align: center; font-size: 0.85rem;">No se encontraron países</div>';
+    if (!lista || lista.length === 0) {
+      listaPaisesScroll.innerHTML = '<div style="padding: 16px 12px; color: #94a3b8; text-align: center; font-size: 0.88rem;">No se encontraron países</div>';
       return;
     }
     lista.forEach(p => {
       const item = document.createElement('div');
       item.className = 'item-pais-opt';
-      item.style.cssText = 'padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f8fafc; font-size: 0.88rem;';
-      item.innerHTML = `<span style="color: #1e293b; font-weight: 500;">${p.desc_pais}</span><strong style="color: #0057a8;">${p.codigo_pais}</strong>`;
+      item.style.cssText = 'padding: 9px 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border-bottom: 1px solid #f8fafc; font-size: 0.88rem;';
+      const desc = p.descripcion || p.desc_pais || p.codigo_pais;
+      item.innerHTML = `<span style="color: #1e293b; font-weight: 500;">${desc}</span><strong style="color: #0057a8; font-family: monospace; font-size: 0.95rem;">${p.codigo_pais}</strong>`;
       item.addEventListener('mouseenter', () => item.style.background = '#f1f5f9');
       item.addEventListener('mouseleave', () => item.style.background = '#ffffff');
       item.addEventListener('click', () => {
@@ -504,13 +536,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
+  const norm = str => (str || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
   if (btnPickerPais && modalPickerPais) {
     btnPickerPais.addEventListener('click', () => {
       modalPickerPais.style.display = 'flex';
+      const paises = obtenerCatalogoPaises();
       if (inputFiltroPais) {
         inputFiltroPais.value = '';
-        renderizarPaises(catalogoPaises);
+        renderizarPaises(paises);
         setTimeout(() => inputFiltroPais.focus(), 100);
+      } else {
+        renderizarPaises(paises);
       }
     });
   }
@@ -529,11 +566,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
   if (inputFiltroPais) {
     inputFiltroPais.addEventListener('input', function() {
-      const q = this.value.trim().toLowerCase();
-      const filtrados = catalogoPaises.filter(p => 
-        p.codigo_pais.toLowerCase().includes(q) || 
-        (p.desc_pais && p.desc_pais.toLowerCase().includes(q))
-      );
+      const q = norm(this.value.trim());
+      const paises = obtenerCatalogoPaises();
+      if (!q) {
+        renderizarPaises(paises);
+        return;
+      }
+      const filtrados = paises.filter(p => {
+        const cp = (p.codigo_pais || '').toLowerCase();
+        const desc = norm(p.descripcion || p.desc_pais || '');
+        return cp.includes(q) || desc.includes(q);
+      });
       renderizarPaises(filtrados);
     });
   }
@@ -585,6 +628,8 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   actualizarOperadorVisibilidad(idCodigoPais ? idCodigoPais.value : '+58');
+  renderizarPaises(obtenerCatalogoPaises());
+});
 </script>
 
 <!-- Modal de Espera y Procesamiento con Reloj de Arena / Spinner -->
@@ -614,12 +659,10 @@ document.addEventListener('DOMContentLoaded', function() {
   100% { transform: translateX(260%); }
 }
 </style>
-
-{% if codigos_catalogo %}
-{{ codigos_catalogo|json_script:"sira-codigos-catalogo" }}
-{% endif %}
 {% endblock %}
 
 {% block footer %}
-{# Omit internal system footer on public registration per UI standard #}
+<footer class="victoria-system-footer">
+ <span><strong>Victoria by WTogether</strong></span>
+</footer>
 {% endblock %}

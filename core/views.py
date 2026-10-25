@@ -277,6 +277,9 @@ def registro_publico(request,token):
     except Exception:tipos_doc=[]
     try:paises_tel=api.get('/publico/invitaciones/paises-telefono')
     except Exception:paises_tel=[]
+    if not paises_tel:
+     from .forms import PAISES_TELEFONO
+     paises_tel=[{'codigo_pais':cp,'descripcion':desc,'desc_pais':desc} for cp,desc in PAISES_TELEFONO]
     f=RegistroPublicoInicialForm(initial=form_data,tipos_documento=tipos_doc,paises_telefono=paises_tel,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])
     return render(request,'core/registro_publico.html',{'inv':inv,'token':token,'form':f,'resultado':draft,'codigos_catalogo':codigos,'paises_telefono':paises_tel,'tipos_documento':tipos_doc})
 
@@ -312,6 +315,9 @@ def registro_publico(request,token):
  except Exception:tipos_doc=[]
  try:paises_tel=api.get('/publico/invitaciones/paises-telefono')
  except Exception:paises_tel=[]
+ if not paises_tel:
+  from .forms import PAISES_TELEFONO
+  paises_tel=[{'codigo_pais':cp,'descripcion':desc,'desc_pais':desc} for cp,desc in PAISES_TELEFONO]
 
  initial_public=request.session.get('registro_publico_form_data')
  f=RegistroPublicoInicialForm(request.POST or None,initial=initial_public,tipos_documento=tipos_doc,paises_telefono=paises_tel,codigos=[(x['id_codigo_telefonico'],f"{x['codigo_pais']} {x['codigo_area_operador']}") for x in codigos])

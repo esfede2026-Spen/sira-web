@@ -300,28 +300,30 @@
   width: 100%;
 }
 .field-cod-pais {
-  width: 110px;
-  min-width: 95px;
-  flex: 0 0 110px;
+  width: 85px;
+  min-width: 78px;
+  flex: 0 0 85px;
   font-weight: 600;
-  padding: 8px 10px;
+  padding: 8px 6px;
   border: 1px solid var(--line, #c8d8e6);
   border-radius: 8px;
   background: #fff;
   cursor: pointer;
   color: #06396f;
+  box-sizing: border-box;
 }
 .field-cod-area {
-  width: 95px;
-  min-width: 80px;
-  flex: 0 0 95px;
+  width: 72px;
+  min-width: 65px;
+  flex: 0 0 72px;
   text-align: center;
-  font-weight: 600;
-  padding: 8px 10px;
+  font-weight: 700;
+  padding: 8px 6px;
   border: 1px solid var(--line, #c8d8e6);
   border-radius: 8px;
   background: #fff;
   color: #06396f;
+  box-sizing: border-box;
 }
 .phone-number-cell {
   display: flex;
@@ -336,12 +338,26 @@
   margin-bottom: 2px;
 }
 .field-telefono-num {
-  width: 100%;
+  width: 125px;
+  min-width: 115px;
   padding: 8px 10px;
   border: 1px solid var(--line, #c8d8e6);
   border-radius: 8px;
   background: #fff;
   font-weight: 500;
+  box-sizing: border-box;
+}
+.field-tipo-doc {
+  width: 72px;
+  min-width: 65px;
+  flex: 0 0 72px;
+  box-sizing: border-box;
+}
+.field-doc-num {
+  width: 160px;
+  min-width: 140px;
+  flex: 0 0 160px;
+  box-sizing: border-box;
 }
 .field-error-text {
   color: #c92a2a;

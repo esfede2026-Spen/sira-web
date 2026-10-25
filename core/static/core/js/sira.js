@@ -39,105 +39,21 @@ document.addEventListener('DOMContentLoaded',()=>{
  const save=document.querySelector('[data-action="save"]'),forms=[...document.querySelectorAll('main form')].filter(f=>getComputedStyle(f).display!=='none'),primary=forms.find(f=>f.querySelector('.primary'))||forms[0];if(!primary){save?.setAttribute('disabled','');save?.classList.add('is-disabled');}save?.addEventListener('click',()=>primary?.requestSubmit());
 });
 // ============================================================================
-// Teléfono Compuesto: Código de País, Código de Área dinámico y Teléfono
+// Teléfono Compuesto: Código de País, Código de Área móvil/abierto y Teléfono
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
   const VENEZUELA_MOBILES = [
-    { code: '414', desc: 'Movistar' },
-    { code: '424', desc: 'Movistar' },
-    { code: '412', desc: 'Digitel' },
-    { code: '422', desc: 'Digitel' },
-    { code: '416', desc: 'Movilnet' },
-    { code: '426', desc: 'Movilnet' }
+    { code: '412' },
+    { code: '422' },
+    { code: '414' },
+    { code: '424' },
+    { code: '416' },
+    { code: '426' }
   ];
-
-  const VENEZUELA_FIXED = [
-    { code: '212', desc: 'Gran Caracas / Miranda / Vargas' },
-    { code: '234', desc: 'Miranda (Barlovento)' },
-    { code: '235', desc: 'Guárico' },
-    { code: '238', desc: 'Guárico' },
-    { code: '239', desc: 'Miranda (Valles del Tuy)' },
-    { code: '240', desc: 'Barinas' },
-    { code: '241', desc: 'Carabobo (Valencia)' },
-    { code: '242', desc: 'Carabobo (Puerto Cabello)' },
-    { code: '243', desc: 'Aragua (Maracay)' },
-    { code: '244', desc: 'Aragua (La Victoria / Cagua)' },
-    { code: '245', desc: 'Carabobo (Guacara)' },
-    { code: '246', desc: 'Guárico' },
-    { code: '247', desc: 'Apure' },
-    { code: '248', desc: 'Amazonas' },
-    { code: '249', desc: 'Carabobo' },
-    { code: '251', desc: 'Lara (Barquisimeto)' },
-    { code: '252', desc: 'Lara (Carora)' },
-    { code: '253', desc: 'Lara' },
-    { code: '254', desc: 'Yaracuy (San Felipe)' },
-    { code: '255', desc: 'Portuguesa (Acarigua / Araure)' },
-    { code: '256', desc: 'Portuguesa' },
-    { code: '257', desc: 'Portuguesa (Guanare)' },
-    { code: '258', desc: 'Cojedes (San Carlos)' },
-    { code: '259', desc: 'Falcón' },
-    { code: '261', desc: 'Zulia (Maracaibo)' },
-    { code: '262', desc: 'Zulia (Cabimas)' },
-    { code: '263', desc: 'Zulia' },
-    { code: '264', desc: 'Zulia (Ciudad Ojeda)' },
-    { code: '265', desc: 'Zulia' },
-    { code: '266', desc: 'Zulia' },
-    { code: '267', desc: 'Zulia' },
-    { code: '268', desc: 'Falcón (Coro)' },
-    { code: '269', desc: 'Falcón (Punto Fijo)' },
-    { code: '271', desc: 'Zulia (Sur del Lago)' },
-    { code: '272', desc: 'Barinas' },
-    { code: '273', desc: 'Barinas' },
-    { code: '274', desc: 'Mérida' },
-    { code: '275', desc: 'Mérida (El Vigía)' },
-    { code: '276', desc: 'Táchira (San Cristóbal)' },
-    { code: '277', desc: 'Táchira' },
-    { code: '278', desc: 'Apure' },
-    { code: '281', desc: 'Anzoátegui (Pto. La Cruz / Barcelona)' },
-    { code: '282', desc: 'Anzoátegui (Anaco / Cantaura)' },
-    { code: '283', desc: 'Anzoátegui (El Tigre)' },
-    { code: '284', desc: 'Bolívar' },
-    { code: '285', desc: 'Bolívar (Ciudad Bolívar)' },
-    { code: '286', desc: 'Bolívar (Puerto Ordaz / San Félix)' },
-    { code: '287', desc: 'Delta Amacuro' },
-    { code: '288', desc: 'Bolívar (Guasipati / Tumeremo)' },
-    { code: '289', desc: 'Bolívar (Santa Elena de Uairén)' },
-    { code: '291', desc: 'Monagas (Maturín)' },
-    { code: '292', desc: 'Monagas (Caripito)' },
-    { code: '293', desc: 'Sucre (Cumaná)' },
-    { code: '294', desc: 'Sucre (Carúpano)' },
-    { code: '295', desc: 'Nueva Esparta (Margarita)' }
-  ];
-
-  let catalogExtra = [];
-  try {
-    const rawData = document.getElementById('sira-codigos-catalogo')?.textContent;
-    if (rawData) {
-      const parsed = JSON.parse(rawData);
-      if (Array.isArray(parsed)) {
-        catalogExtra = parsed
-          .filter(x => (x.codigo_pais === '+58' || !x.codigo_pais) && x.codigo_area_operador)
-          .map(x => ({
-            code: (x.codigo_area_sin_cero || x.codigo_area_operador.replace(/^0+/, '')),
-            desc: x.descripcion || (x.tipo_linea === 'CELULAR' ? 'Móvil' : 'Nacional')
-          }));
-      }
-    }
-  } catch (e) {
-    console.warn('No se pudo parsear el catálogo telefónico extra', e);
-  }
-
-  const veAllMap = new Map();
-  [...VENEZUELA_MOBILES, ...VENEZUELA_FIXED, ...catalogExtra].forEach(item => {
-    if (item && item.code && !veAllMap.has(item.code)) {
-      veAllMap.set(item.code, item);
-    }
-  });
-  const ALL_VE_CODES = Array.from(veAllMap.values());
 
   document.querySelectorAll('input[name="codigoArea"]').forEach(areaInput => {
     const form = areaInput.closest('form') || document;
-    const paisSelect = form.querySelector('select[name="codigoPais"]') || areaInput.parentElement.querySelector('select[name="codigoPais"]');
+    const paisSelect = form.querySelector('select[name="codigoPais"], input[name="codigoPais"]') || areaInput.parentElement.querySelector('select[name="codigoPais"]');
     const numInput = form.querySelector('input[name="numero"]');
     const datalistId = areaInput.getAttribute('list');
     let datalist = datalistId ? document.getElementById(datalistId) : null;
@@ -151,54 +67,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const renderOptions = (items) => {
+      if (!datalist) return;
+      if (!items || items.length === 0) {
+        datalist.innerHTML = '';
+        return;
+      }
       datalist.innerHTML = items
         .map(i => '<option value="' + i.code + '"></option>')
         .join('');
     };
 
     const updateCountryState = () => {
-      const isVe = !paisSelect || paisSelect.value === '+58' || paisSelect.value === '';
-      areaInput.placeholder = isVe ? '412' : 'Área';
+      const currentPais = paisSelect ? (paisSelect.value || '').trim() : '+58';
+      const isVe = !currentPais || currentPais === '+58';
+      areaInput.placeholder = '123';
       areaInput.maxLength = 3;
       areaInput.minLength = 3;
       areaInput.setAttribute('pattern', '\\d{3}');
       if (numInput) {
-        numInput.placeholder = '7 dígitos';
+        numInput.placeholder = '1234567';
         numInput.maxLength = 7;
         numInput.minLength = 7;
         numInput.setAttribute('pattern', '\\d{7}');
       }
       if (isVe) {
-        const currentVal = areaInput.value.trim().replace(/^0+/, '');
-        if (!currentVal) {
-          renderOptions(VENEZUELA_MOBILES);
-        } else {
-          filterVeCodes(currentVal);
-        }
+        renderOptions(VENEZUELA_MOBILES);
       } else {
         renderOptions([]);
       }
     };
 
-    const filterVeCodes = (val) => {
-      const clean = val.replace(/^0+/, '').replace(/\D/g, '');
-      if (!clean) {
-        renderOptions(VENEZUELA_MOBILES);
-        return;
-      }
-      const matches = ALL_VE_CODES.filter(x => x.code.startsWith(clean) || x.code.includes(clean));
-      renderOptions(matches.length > 0 ? matches.slice(0, 15) : []);
-    };
-
     areaInput.addEventListener('focus', () => {
-      const isVe = !paisSelect || paisSelect.value === '+58' || paisSelect.value === '';
+      const currentPais = paisSelect ? (paisSelect.value || '').trim() : '+58';
+      const isVe = !currentPais || currentPais === '+58';
       if (isVe) {
-        const val = areaInput.value.trim().replace(/^0+/, '');
-        if (!val) {
-          renderOptions(VENEZUELA_MOBILES);
-        } else {
-          filterVeCodes(val);
-        }
+        renderOptions(VENEZUELA_MOBILES);
+      } else {
+        renderOptions([]);
       }
     });
 
@@ -210,10 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (e.target.value !== val) {
         e.target.value = val;
-      }
-      const isVe = !paisSelect || paisSelect.value === '+58' || paisSelect.value === '';
-      if (isVe) {
-        filterVeCodes(val);
       }
     });
 

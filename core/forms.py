@@ -214,8 +214,8 @@ PAISES_TELEFONO = (
 class TelefonoForm(forms.Form):
     tipoContactoId = forms.ChoiceField(label='Tipo de teléfono')
     codigoPais = forms.ChoiceField(label='Código', initial='+58', choices=PAISES_TELEFONO, widget=forms.Select(attrs={'class': 'field-cod-pais'}))
-    codigoArea = forms.CharField(label='Área', required=True, max_length=3, widget=forms.TextInput(attrs={'class': 'field-cod-area', 'placeholder': '412', 'maxlength': '3', 'autocomplete': 'off', 'inputmode': 'numeric'}))
-    numero = forms.CharField(label='Teléfono:', min_length=7, max_length=7, widget=forms.TextInput(attrs={'class': 'field-telefono-num', 'inputmode': 'numeric', 'maxlength': '7', 'placeholder': '7 dígitos'}))
+    codigoArea = forms.CharField(label='Área', required=True, max_length=3, widget=forms.TextInput(attrs={'class': 'field-cod-area', 'placeholder': '123', 'maxlength': '3', 'autocomplete': 'off', 'inputmode': 'numeric'}))
+    numero = forms.CharField(label='Teléfono:', min_length=7, max_length=7, widget=forms.TextInput(attrs={'class': 'field-telefono-num', 'inputmode': 'numeric', 'maxlength': '7', 'placeholder': '1234567'}))
     extension = forms.CharField(label='Extensión', max_length=10, required=False)
     principal = forms.BooleanField(label='Teléfono principal', required=False)
     usaWhatsapp = forms.BooleanField(label='Usa WhatsApp', required=False)
@@ -226,7 +226,16 @@ class TelefonoForm(forms.Form):
         if tipos:
             self.fields['tipoContactoId'].choices = tipos
         if paises_telefono:
-            self.fields['codigoPais'].choices = [(p.get('codigo_pais', ''), f"{p.get('codigo_pais', '')} ({p.get('desc_pais', '')})") for p in paises_telefono]
+            opts = []
+            for p in paises_telefono:
+                cp = p.get('codigo_pais', '')
+                desc = p.get('descripcion') or p.get('desc_pais', '')
+                if desc and cp not in desc:
+                    label = f"{desc} ({cp})"
+                else:
+                    label = desc or cp
+                opts.append((cp, label))
+            self.fields['codigoPais'].choices = opts
 
     def clean(self):
         d = super().clean()
@@ -334,12 +343,12 @@ class ElectoralDeclaracionForm(forms.Form):
 
 
 class RegistroPublicoInicialForm(forms.Form):
-    tipoDocumentoId = forms.ChoiceField(label='Tipo de documento', initial=1)
-    documentoNumero = forms.CharField(label='N.º de documento *', max_length=20, widget=forms.TextInput(attrs={'placeholder': 'no. cedula', 'class': 'form-input', 'inputmode': 'numeric'}))
+    tipoDocumentoId = forms.ChoiceField(label='Tipo *', initial=1)
+    documentoNumero = forms.CharField(label='N.° de documento *', max_length=20, widget=forms.TextInput(attrs={'placeholder': 'no. cedula', 'class': 'form-input', 'inputmode': 'numeric'}))
     nacionalidadCatalogoId = forms.IntegerField(initial=1, widget=forms.HiddenInput())
     codigoPais = forms.ChoiceField(label='Código *', initial='+58', choices=PAISES_TELEFONO, widget=forms.Select(attrs={'class': 'field-cod-pais', 'id': 'id_codigo_pais'}))
-    codigoArea = forms.CharField(label='Área *', required=True, max_length=3, widget=forms.TextInput(attrs={'class': 'field-cod-area', 'placeholder': '412', 'maxlength': '3', 'autocomplete': 'off', 'inputmode': 'numeric', 'id': 'id_codigo_area'}))
-    numero = forms.CharField(label='Teléfono *', min_length=7, max_length=7, widget=forms.TextInput(attrs={'class': 'field-telefono-num', 'inputmode': 'numeric', 'maxlength': '7', 'placeholder': '7 dígitos', 'id': 'id_numero'}))
+    codigoArea = forms.CharField(label='Área *', required=True, max_length=3, widget=forms.TextInput(attrs={'class': 'field-cod-area', 'placeholder': '123', 'maxlength': '3', 'autocomplete': 'off', 'inputmode': 'numeric', 'id': 'id_codigo_area'}))
+    numero = forms.CharField(label='Teléfono *', min_length=7, max_length=7, widget=forms.TextInput(attrs={'class': 'field-telefono-num', 'inputmode': 'numeric', 'maxlength': '7', 'placeholder': '1234567', 'id': 'id_numero'}))
     correo = forms.EmailField(label='Correo electrónico *', max_length=254, widget=forms.EmailInput(attrs={'class': 'form-input', 'placeholder': 'ejemplo@correo.com'}))
     autorizaUbicacion = forms.BooleanField(label='Autorizo ubicación', required=False)
     ubicacion = forms.CharField(label='Ubicación (referencia opcional):', required=False, max_length=250, widget=forms.TextInput(attrs={'placeholder': 'Sector, ciudad o referencia', 'id': 'id_ubicacion'}))
@@ -359,7 +368,16 @@ class RegistroPublicoInicialForm(forms.Form):
         else:
             self.fields['tipoDocumentoId'].choices = [('1', 'V'), ('3', 'E')]
         if paises_telefono:
-            self.fields['codigoPais'].choices = [(p.get('codigo_pais', ''), f"{p.get('codigo_pais', '')} ({p.get('desc_pais', '')})") for p in paises_telefono]
+            opts = []
+            for p in paises_telefono:
+                cp = p.get('codigo_pais', '')
+                desc = p.get('descripcion') or p.get('desc_pais', '')
+                if desc and cp not in desc:
+                    label = f"{desc} ({cp})"
+                else:
+                    label = desc or cp
+                opts.append((cp, label))
+            self.fields['codigoPais'].choices = opts
 
     def clean(self):
         d = super().clean()

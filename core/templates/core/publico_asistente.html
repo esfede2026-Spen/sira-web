@@ -272,6 +272,14 @@
                   <div style="display: flex; gap: 0.25rem;">
                     {{ form.codigoPais }}
                     {{ form.codigoArea }}
+                    <datalist id="lista_codigos_area_tel_pub">
+                      <option value="412"></option>
+                      <option value="422"></option>
+                      <option value="414"></option>
+                      <option value="424"></option>
+                      <option value="416"></option>
+                      <option value="426"></option>
+                    </datalist>
                   </div>
                 </div>
                 <div class="field-l field-group phone-number-cell" style="grid-column: span 7;">
@@ -779,6 +787,41 @@ function convertirFechaNativa(picker) {
   }
 }
 
+{% if seccion == 'contacto' %}
+document.addEventListener('DOMContentLoaded', function(){
+  const cp = document.getElementById('{{ form.codigoPais.id_for_label }}');
+  const ca = document.getElementById('{{ form.codigoArea.id_for_label }}');
+  const num = document.getElementById('{{ form.numero.id_for_label }}');
+  function toggleAreaList() {
+    if (!cp || !ca) return;
+    if (cp.value === '+58' || !cp.value) {
+      ca.setAttribute('list', 'lista_codigos_area_tel_pub');
+    } else {
+      ca.removeAttribute('list');
+    }
+  }
+  if (cp) {
+    cp.addEventListener('change', toggleAreaList);
+    toggleAreaList();
+  }
+  if (ca) {
+    ca.addEventListener('input', function() {
+      let v = this.value.replace(/\D/g, '');
+      if (v.startsWith('0')) v = v.replace(/^0+/, '');
+      if (v.length > 3) v = v.substring(0, 3);
+      this.value = v;
+    });
+  }
+  if (num) {
+    num.addEventListener('input', function() {
+      let v = this.value.replace(/\D/g, '');
+      if (v.length > 7) v = v.substring(0, 7);
+      this.value = v;
+    });
+  }
+});
+{% endif %}
+
 {% if seccion == 'territorio' %}
 document.addEventListener('DOMContentLoaded', function(){
   const form = document.getElementById('wizard-form');
@@ -805,5 +848,7 @@ document.addEventListener('DOMContentLoaded', function(){
 {% endblock %}
 
 {% block footer %}
-{# Omit internal system footer on public registration assistant #}
+<footer class="victoria-system-footer">
+ <span><strong>Victoria by WTogether</strong></span>
+</footer>
 {% endblock %}

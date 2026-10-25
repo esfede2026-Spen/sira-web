@@ -173,10 +173,10 @@
                 {{ telefono_form.codigoPais }}
                 {{ telefono_form.codigoArea }}
                 <datalist id="lista_codigos_area_tel">
-                  <option value="414"></option>
-                  <option value="424"></option>
                   <option value="412"></option>
                   <option value="422"></option>
+                  <option value="414"></option>
+                  <option value="424"></option>
                   <option value="416"></option>
                   <option value="426"></option>
                 </datalist>
@@ -363,4 +363,44 @@
 {% if codigos_catalogo %}
 {{ codigos_catalogo|json_script:"sira-codigos-catalogo" }}
 {% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const codPaisSelect = document.getElementById('{{ telefono_form.codigoPais.id_for_label }}');
+  const codAreaInput = document.getElementById('{{ telefono_form.codigoArea.id_for_label }}');
+  const numInput = document.getElementById('{{ telefono_form.numero.id_for_label }}');
+
+  function updateAreaDatalist() {
+    if (!codPaisSelect || !codAreaInput) return;
+    const isVE = (codPaisSelect.value === '+58' || !codPaisSelect.value);
+    if (isVE) {
+      codAreaInput.setAttribute('list', 'lista_codigos_area_tel');
+    } else {
+      codAreaInput.removeAttribute('list');
+    }
+  }
+
+  if (codPaisSelect) {
+    codPaisSelect.addEventListener('change', updateAreaDatalist);
+    updateAreaDatalist();
+  }
+
+  if (codAreaInput) {
+    codAreaInput.addEventListener('input', function() {
+      let v = this.value.replace(/\D/g, '');
+      if (v.startsWith('0')) v = v.replace(/^0+/, '');
+      if (v.length > 3) v = v.substring(0, 3);
+      this.value = v;
+    });
+  }
+
+  if (numInput) {
+    numInput.addEventListener('input', function() {
+      let v = this.value.replace(/\D/g, '');
+      if (v.length > 7) v = v.substring(0, 7);
+      this.value = v;
+    });
+  }
+});
+</script>
 {% endblock %}
