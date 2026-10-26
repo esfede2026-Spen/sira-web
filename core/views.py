@@ -354,11 +354,36 @@ def persona_academico(request,pid):
  api=SiraApi(request)
  try:p=api.get(f'/personas/{pid}');d=api.get(f'/personas/{pid}/academico')
  except ApiError as e:messages.error(request,str(e));return redirect('persona_residencia',pid=pid)
+
+ if request.method=='POST':
+  accion=request.POST.get('accion')
+  if accion=='agregar_estudio':
+   tId=request.POST.get('titulo1Id') or request.POST.get('nuevo_tituloId')
+   eId=request.POST.get('especialidadId') or request.POST.get('nuevo_especialidadId')
+   inst=request.POST.get('institucion') or request.POST.get('nuevo_institucion','')
+   anio=request.POST.get('anioGraduacion') or request.POST.get('nuevo_anioGraduacion','')
+   if not tId and not eId and not inst.strip():
+    messages.error(request,'Debe indicar al menos título, especialidad o institución.')
+   else:
+    try:
+     api.post(f'/personas/{pid}/academico/estudios',{'tituloId':tId,'especialidadId':eId,'institucion':inst.strip(),'anioGraduacion':anio.strip()})
+     messages.success(request,'Título y especialidad agregados.')
+    except ApiError as e:messages.error(request,str(e))
+   return redirect('persona_academico',pid=pid)
+  elif accion=='eliminar_estudio':
+   idx=request.POST.get('idx')
+   try:
+    api.delete(f'/personas/{pid}/academico/estudios/{idx}')
+    messages.success(request,'Título retirado.')
+   except ApiError as e:messages.error(request,str(e))
+   return redirect('persona_academico',pid=pid)
+
  def cat(ep,idk):return choices(api.get('/catalogos-v4/'+ep),idk,'descripcion')
  try:titulos=choices(api.get('/catalogos-v4/titulos'),'id_titulo','descripcion')
  except ApiError:titulos=[]
- c={'niveles':cat('niveles','id_nivel'),'especialidades':cat('especialidades','id_especialidad'),'honores':cat('honores','id_honor'),'disponibilidades':cat('disponibilidades','id_disponibilidad'),'modalidades':cat('modalidades','id_modalidad'),'titulos':titulos}
- initial={'nivelId':d.get('id_nivel'),'titulo1Id':d.get('id_titulo_1') or '','titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'titulo2Id':d.get('id_titulo_2') or '','titulo2':d.get('titulo_2'),'especialidad2Id':d.get('id_especialidad_2'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')}
+ especialidades_raw = api.get('/catalogos-v4/especialidades')
+ c={'niveles':cat('niveles','id_nivel'),'especialidades':choices(especialidades_raw,'id_especialidad','descripcion'),'honores':cat('honores','id_honor'),'disponibilidades':cat('disponibilidades','id_disponibilidad'),'modalidades':cat('modalidades','id_modalidad'),'titulos':titulos}
+ initial={'nivelId':d.get('id_nivel'),'estadoEstudio':d.get('descripcion_postgrado') or '','campoEducacion':d.get('descripcion_doctorado') or '','institucion':d.get('titulo_2') or '','anioGraduacion':d.get('descripcion_magister') or '','titulo1Id':d.get('id_titulo_1') or '','titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'titulo2Id':d.get('id_titulo_2') or '','titulo2':d.get('titulo_2'),'especialidad2Id':d.get('id_especialidad_2'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')}
  f=AcademicoForm(request.POST or None,initial=initial,c=c)
  if request.method=='POST' and f.is_valid():
   try:
@@ -370,7 +395,7 @@ def persona_academico(request,pid):
    return redirect('persona_grupos',pid=pid)
   except ApiError as e:
    messages.error(request,str(e))
- return render(request,'core/persona_academico.html',{'p':p,'form':f,'pid':pid,'paso':6})
+ return render(request,'core/persona_academico.html',{'p':p,'form':f,'pid':pid,'paso':6,'estudios':d.get('estudios',[]),'especialidades_raw':especialidades_raw})
 @login_required
 def persona_grupos(request,pid):
  api=SiraApi(request)
@@ -508,13 +533,38 @@ def registro_publico_paso(request,token,seccion):
     api.put(f'/publico/invitaciones/{token}/territorio?usoId={request.session.get("registro_publico_uso_id","")}',payload_terr)
     return redirect('registro_publico_paso',token=token,seccion='academico')
   elif seccion=='academico':
+   usoId=request.session.get("registro_publico_uso_id","")
+   if request.method=='POST':
+    accion=request.POST.get('accion')
+    if accion=='agregar_estudio':
+     tId=request.POST.get('titulo1Id') or request.POST.get('nuevo_tituloId')
+     eId=request.POST.get('especialidadId') or request.POST.get('nuevo_especialidadId')
+     inst=request.POST.get('institucion') or request.POST.get('nuevo_institucion','')
+     anio=request.POST.get('anioGraduacion') or request.POST.get('nuevo_anioGraduacion','')
+     if not tId and not eId and not inst.strip():
+      messages.error(request,'Debe indicar al menos título, especialidad o institución.')
+     else:
+      try:
+       api.post(f'/publico/invitaciones/{token}/academico/estudios?usoId={usoId}',{'tituloId':tId,'especialidadId':eId,'institucion':inst.strip(),'anioGraduacion':anio.strip()})
+       messages.success(request,'Título y especialidad agregados.')
+      except ApiError as e:messages.error(request,str(e))
+     return redirect('registro_publico_paso',token=token,seccion='academico')
+    elif accion=='eliminar_estudio':
+     idx=request.POST.get('idx')
+     try:
+      api.delete(f'/publico/invitaciones/{token}/academico/estudios/{idx}?usoId={usoId}')
+      messages.success(request,'Título retirado.')
+     except ApiError as e:messages.error(request,str(e))
+     return redirect('registro_publico_paso',token=token,seccion='academico')
+
    d=ctx.get('academico') or {}
    try:titulos=choices(api.get('/publico/invitaciones/catalogos/titulos'),'id_titulo','descripcion')
    except ApiError:titulos=[]
-   c={'niveles':choices(api.get('/publico/invitaciones/catalogos/niveles'),'id_nivel','descripcion'),'especialidades':choices(api.get('/publico/invitaciones/catalogos/especialidades'),'id_especialidad','descripcion'),'honores':choices(api.get('/publico/invitaciones/catalogos/honores'),'id_honor','descripcion'),'disponibilidades':choices(api.get('/publico/invitaciones/catalogos/disponibilidades'),'id_disponibilidad','descripcion'),'modalidades':choices(api.get('/publico/invitaciones/catalogos/modalidades'),'id_modalidad','descripcion'),'titulos':titulos}
-   initial={'nivelId':d.get('id_nivel'),'titulo1Id':d.get('id_titulo_1') or '','titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'titulo2Id':d.get('id_titulo_2') or '','titulo2':d.get('titulo_2'),'especialidad2Id':d.get('id_especialidad_2'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')}
+   especialidades_raw=api.get('/publico/invitaciones/catalogos/especialidades')
+   c={'niveles':choices(api.get('/publico/invitaciones/catalogos/niveles'),'id_nivel','descripcion'),'especialidades':choices(especialidades_raw,'id_especialidad','descripcion'),'honores':choices(api.get('/publico/invitaciones/catalogos/honores'),'id_honor','descripcion'),'disponibilidades':choices(api.get('/publico/invitaciones/catalogos/disponibilidades'),'id_disponibilidad','descripcion'),'modalidades':choices(api.get('/publico/invitaciones/catalogos/modalidades'),'id_modalidad','descripcion'),'titulos':titulos}
+   initial={'nivelId':d.get('id_nivel'),'estadoEstudio':d.get('descripcion_postgrado') or '','campoEducacion':d.get('descripcion_doctorado') or '','institucion':d.get('titulo_2') or '','anioGraduacion':d.get('descripcion_magister') or '','titulo1Id':d.get('id_titulo_1') or '','titulo':d.get('titulo'),'especialidadId':d.get('id_especialidad'),'titulo2Id':d.get('id_titulo_2') or '','titulo2':d.get('titulo_2'),'especialidad2Id':d.get('id_especialidad_2'),'postgrado':d.get('postgrado')=='S','descripcionPostgrado':d.get('descripcion_postgrado'),'doctorado':d.get('doctorado')=='S','descripcionDoctorado':d.get('descripcion_doctorado'),'magister':d.get('magister')=='S','descripcionMagister':d.get('descripcion_magister'),'honorId':d.get('id_honor'),'ocupacion1':d.get('ocupacion_1'),'ocupacion2':d.get('ocupacion_2'),'ocupacion3':d.get('ocupacion_3'),'disponibilidadId':d.get('id_disponibilidad'),'modalidadId':d.get('id_modalidad'),'whatsapp':d.get('whatsapp'),'facebook':d.get('facebook'),'instagram':d.get('instagram'),'youtube':d.get('youtube'),'xTwitter':d.get('x_twitter'),'observacion':d.get('observacion')}
    form=AcademicoForm(request.POST or None,initial=initial,c=c)
-   if request.method=='POST' and form.is_valid():api.put(f'/publico/invitaciones/{token}/academico?usoId={request.session.get("registro_publico_uso_id","")}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='electoral')
+   if request.method=='POST' and form.is_valid():api.put(f'/publico/invitaciones/{token}/academico?usoId={usoId}',form.cleaned_data);return redirect('registro_publico_paso',token=token,seccion='electoral')
   elif seccion=='grupos':
    form=GrupoPersonaForm(request.POST or None,initial={'otroGrupo':ctx.get('otroGrupo','')})
    form.fields['grupoId'].choices=choices(ctx.get('catalogoGrupos',[]),'id_grupo','descripcion')
@@ -566,3 +616,7 @@ def rol_permisos(request,rid):
  api=SiraApi(request)
  if request.method=='POST':api.put(f'/usuarios/roles/{rid}/permisos',{'permisos':[int(x) for x in request.POST.getlist('permisos')]});messages.success(request,'Permisos guardados.');return redirect('roles')
  return render(request,'core/rol_permisos.html',{'data':api.get(f'/usuarios/roles/{rid}/permisos')})
+
+
+
+

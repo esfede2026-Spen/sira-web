@@ -21,79 +21,210 @@
 
 <section class="card sprint2-card">
   <div class="note">
-    <b>Formación y experiencia</b>
-    <small>Indique nivel, títulos académicos obtenidos y especialidades.</small>
+    <b>Formación académica y trayectoria</b>
+    <small>Indique nivel educativo ISCED, registre sus títulos y especialidades, y detalle datos ocupacionales.</small>
   </div>
 
-  <form method="post" class="sprint2-form">
+  <form method="post" class="sprint2-form" id="academico-form">
     {% csrf_token %}
     {{ form.non_field_errors }}
+    <input type="hidden" name="idx" id="delete_idx" value="">
 
-    <div class="sprint2-grid-12">
-      <!-- Fila 1: Nivel (S: span 4), Título 1 (SM: span 4), Especialidad 1 (SM: span 4) -->
+    <!-- SECCIÓN 1: NIVEL Y ESTADO GENERAL ISCED -->
+    <h3 style="color: #06396f; font-size: 1.05rem; font-weight: 700; border-bottom: 2px solid #e1edf6; padding-bottom: 0.4rem; margin-top: 0.5rem; margin-bottom: 1rem;">
+      1. Nivel académico general (ISCED 2011)
+    </h3>
+    <div class="sprint2-grid-12" style="margin-bottom: 1.5rem;">
       <div class="field-m">
         {{ form.nivelId.as_field_group }}
       </div>
       <div class="field-m">
-        {{ form.titulo1Id.as_field_group }}
+        {{ form.estadoEstudio.as_field_group }}
       </div>
       <div class="field-m">
-        {{ form.especialidadId.as_field_group }}
+        {{ form.campoEducacion.as_field_group }}
       </div>
+    </div>
 
-      <!-- Fila 2: Título 2 (SM: span 4), Especialidad 2 (SM: span 4), Postgrado (SM: span 4) -->
-      <div class="field-m">
-        {{ form.titulo2Id.as_field_group }}
-      </div>
-      <div class="field-m">
-        {{ form.especialidad2Id.as_field_group }}
-      </div>
-      <div class="field-m">
-        {{ form.descripcionPostgrado.as_field_group }}
-      </div>
+    <!-- SECCIÓN 2: TÍTULOS Y ESPECIALIDADES MÚLTIPLES -->
+    <h3 style="color: #06396f; font-size: 1.05rem; font-weight: 700; border-bottom: 2px solid #e1edf6; padding-bottom: 0.4rem; margin-bottom: 1rem;">
+      2. Títulos académicos y especialidades
+    </h3>
+    <p style="font-size: 0.85rem; color: #64748b; margin-top: -0.5rem; margin-bottom: 1rem;">
+      Seleccione el título para filtrar las carreras o especialidades afines. Puede registrar múltiples títulos educativos.
+    </p>
 
-      <!-- Fila 3: Doctorado (SM: span 4), Magíster (SM: span 4), Honor académico (SM: span 4) -->
+    <!-- Campos para agregar un nuevo título -->
+    <div class="sprint2-grid-12" style="background: #f8fafc; border: 1px solid #e2edf6; border-radius: 10px; padding: 1.25rem; margin-bottom: 1.5rem; align-items: flex-end;">
       <div class="field-m">
-        {{ form.descripcionDoctorado.as_field_group }}
+        <label for="{{ form.titulo1Id.id_for_label }}">Título académico:</label>
+        {{ form.titulo1Id }}
       </div>
       <div class="field-m">
-        {{ form.descripcionMagister.as_field_group }}
+        <label for="{{ form.especialidadId.id_for_label }}">Especialidad / Carrera:</label>
+        {{ form.especialidadId }}
       </div>
+      <div class="field-m">
+        <label for="{{ form.institucion.id_for_label }}">Institución educativa:</label>
+        {{ form.institucion }}
+      </div>
+      <div class="field-s">
+        <label for="{{ form.anioGraduacion.id_for_label }}">Año egreso:</label>
+        {{ form.anioGraduacion }}
+      </div>
+      <div class="field-s" style="display: flex; align-items: flex-end;">
+        <button type="submit" name="accion" value="agregar_estudio" class="primary btn-compact" style="width: 100%; height: 38px; font-weight: 700; font-size: 0.88rem; background: #0057a8 !important; white-space: nowrap;">
+          + Agregar título
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabla / Lista de Títulos y Especialidades Registrados (Similar a Grupos) -->
+    <div style="margin-bottom: 2rem;">
+      <h4 style="color: #06396f; font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem;">
+        Títulos y especialidades registrados ({{ estudios|length }})
+      </h4>
+      <div style="border: 1px solid #e2edf6; border-radius: 8px; overflow-x: auto; background: #ffffff;">
+        <table class="tabla-titulos-registrados" style="width: 100%; min-width: 580px; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
+          <thead>
+            <tr style="background: #f1f5f9; color: #06396f; font-weight: 700; border-bottom: 1px solid #e2edf6;">
+              <th style="padding: 0.65rem 0.85rem;">Título</th>
+              <th style="padding: 0.65rem 0.85rem;">Especialidad / Carrera</th>
+              <th style="padding: 0.65rem 0.85rem;">Institución educativa</th>
+              <th style="padding: 0.65rem 0.85rem; width: 110px;">Año egreso</th>
+              <th style="padding: 0.65rem 0.85rem; width: 90px; text-align: center;">Acción</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for est in estudios %}
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 0.65rem 0.85rem; font-weight: 600; color: #0f172a;">{{ est.titulo|default:'—' }}</td>
+                <td style="padding: 0.65rem 0.85rem; color: #1e293b;">{{ est.especialidad|default:'—' }}</td>
+                <td style="padding: 0.65rem 0.85rem; color: #475569;">{{ est.institucion|default:'—' }}</td>
+                <td style="padding: 0.65rem 0.85rem; color: #475569;">{{ est.anioGraduacion|default:'—' }}</td>
+                <td style="padding: 0.65rem 0.85rem; text-align: center;">
+                  <button type="submit" name="accion" value="eliminar_estudio" onclick="document.getElementById('delete_idx').value='{{ forloop.counter0 }}';" class="danger mini" style="padding: 0.25rem 0.65rem; font-size: 0.78rem;">
+                    Retirar
+                  </button>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="5" style="padding: 1rem; text-align: center; color: #64748b;">
+                  No ha registrado títulos o especialidades aún. Complete los campos arriba y pulse <strong>"+ Agregar título"</strong>.
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: EXPERIENCIA, OCUPACIÓN Y DISPONIBILIDAD -->
+    <h3 style="color: #06396f; font-size: 1.05rem; font-weight: 700; border-bottom: 2px solid #e1edf6; padding-bottom: 0.4rem; margin-bottom: 1rem;">
+      3. Ocupación laboral y disponibilidad
+    </h3>
+    <div class="sprint2-grid-12">
+      <!-- Fila: Honor académico (M), Ocupación principal (M), Cargo desempeñado (M) -->
       <div class="field-m">
         {{ form.honorId.as_field_group }}
       </div>
-
-      <!-- Fila 4: Ocupación 1 (M: span 4), Ocupación 2 (M: span 4), Ocupación 3 (M: span 4) -->
       <div class="field-m">
         {{ form.ocupacion1.as_field_group }}
       </div>
       <div class="field-m">
         {{ form.ocupacion2.as_field_group }}
       </div>
+
+      <!-- Fila: Organización / Empresa (M), Disponibilidad (M), Modalidad (M) -->
       <div class="field-m">
         {{ form.ocupacion3.as_field_group }}
       </div>
-
-      <!-- Fila 5: Disponibilidad (S: span 3), Modalidad (S: span 3), Observación (L: span 6) -->
-      <div class="field-sm">
+      <div class="field-m">
         {{ form.disponibilidadId.as_field_group }}
       </div>
-      <div class="field-sm">
+      <div class="field-m">
         {{ form.modalidadId.as_field_group }}
       </div>
-      <div class="field-l">
+
+      <!-- Fila: Observaciones (ancho completo) -->
+      <div class="field-span-8" style="grid-column: 1 / -1;">
         {{ form.observacion.as_field_group }}
       </div>
 
+      {{ form.titulo2Id }}
+      {{ form.especialidad2Id }}
+      {{ form.titulo2 }}
+      {{ form.descripcionPostgrado }}
+      {{ form.descripcionDoctorado }}
+      {{ form.descripcionMagister }}
       {{ form.postgrado }}
       {{ form.doctorado }}
       {{ form.magister }}
     </div>
 
-    <div class="buttons">
+    <div class="buttons" style="margin-top: 1.75rem;">
       <a class="secondary" href="{% url 'persona_residencia' pid %}">Regresar</a>
-      <button class="primary" type="submit">Guardar y continuar</button>
+      <button class="primary" type="submit" name="accion" value="guardar">Guardar y continuar</button>
     </div>
   </form>
 </section>
+
+<!-- Script de filtrado dinámico de Especialidades por Título Académico -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const tituloSelect = document.getElementById('{{ form.titulo1Id.id_for_label }}');
+  const especialidadSelect = document.getElementById('{{ form.especialidadId.id_for_label }}');
+
+  if (!tituloSelect || !especialidadSelect) return;
+
+  const ESPECIALIDADES_POR_TITULO = {
+    // 1: Licenciado
+    "1": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 43, 44, 45, 46, 47, 48, 55, 56, 57, 58, 59, 62, 63, 64, 65, 66, 67],
+    // 2: Ingeniero
+    "2": [21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 48, 62, 63, 64],
+    // 3: Salud
+    "3": [49, 50, 51, 52, 53, 54],
+    // 4: Abogado
+    "4": [60, 61]
+  };
+
+  const todasLasOpciones = Array.from(especialidadSelect.options).map(opt => ({
+    value: opt.value,
+    text: opt.text
+  }));
+
+  function filtrarEspecialidades() {
+    const tid = tituloSelect.value;
+    const valorSeleccionado = especialidadSelect.value;
+    especialidadSelect.innerHTML = '';
+
+    const permitidos = ESPECIALIDADES_POR_TITULO[tid] || null;
+
+    todasLasOpciones.forEach(opt => {
+      if (!opt.value) {
+        especialidadSelect.add(new Option(opt.text, opt.value));
+        return;
+      }
+      const numVal = parseInt(opt.value, 10);
+      if (!permitidos || permitidos.includes(numVal)) {
+        especialidadSelect.add(new Option(opt.text, opt.value));
+      }
+    });
+
+    // Restaurar selección previa si sigue siendo válida
+    if (valorSeleccionado && Array.from(especialidadSelect.options).some(o => o.value === valorSeleccionado)) {
+      especialidadSelect.value = valorSeleccionado;
+    } else {
+      especialidadSelect.value = '';
+    }
+  }
+
+  tituloSelect.addEventListener('change', filtrarEspecialidades);
+  if (tituloSelect.value) {
+    filtrarEspecialidades();
+  }
+});
+</script>
 {% endblock %}
+

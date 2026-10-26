@@ -13,7 +13,8 @@ class IdentificacionForm(forms.Form):
   super().__init__(*a,**k)
   self.fields['nacionalidadCatalogoId'].choices=nacionalidades
   if sexos:
-   self.fields['sexoId'].choices=[('','Seleccione…')]+[(str(k),v) for k,v in sexos]
+   clean_sexos = [(str(k), v) for k, v in sexos if str(k).strip() and str(v).strip().lower() not in ('seleccione…', 'seleccione...')]
+   self.fields['sexoId'].choices = [('', 'Seleccione…')] + clean_sexos
   if tipos_documento:
    self.fields['tipoDocumentoId'].choices=[(str(t.get('id_tipo_documento', t.get('id', ''))), t.get('codigo', '')) for t in tipos_documento]
   else:
@@ -251,47 +252,94 @@ class TelefonoForm(forms.Form):
 class ResidenciaForm(forms.Form):
  paisId=forms.ChoiceField(label='País');estadoId=forms.ChoiceField(label='Estado',required=False);ciudadId=forms.ChoiceField(label='Ciudad',required=False);municipioId=forms.ChoiceField(label='Municipio',required=False);parroquiaId=forms.ChoiceField(label='Parroquia',required=False);tipoSectorId=forms.ChoiceField(label='Tipo de sector',required=False);sectorId=forms.ChoiceField(label='Sector',required=False);codigoPostalId=forms.ChoiceField(label='Código postal',required=False);direccionComplementaria=forms.CharField(label='Dirección complementaria',required=False,max_length=500,widget=forms.Textarea(attrs={'rows':3,'placeholder':'Calle, edificio, casa, punto de referencia'}));ubicacion=forms.CharField(label='Ubicación / Referencia geográfica',required=False,max_length=255,widget=forms.TextInput(attrs={'placeholder':'Ubicación o referencia geográfica'}));paisNombre=forms.CharField(label='País',required=False,max_length=100,widget=forms.TextInput(attrs={'placeholder':'Venezuela'}))
  def __init__(self,*a,c=None,choices=None,**k):super().__init__(*a,**k);choices=choices or {};[setattr(self.fields[f],'choices',choices.get(f,())) for f in ('paisId','estadoId','ciudadId','municipioId','parroquiaId','tipoSectorId','sectorId','codigoPostalId')]
+ESTADOS_ESTUDIO = (
+    ('', 'Seleccione…'),
+    ('EN_CURSO', 'En curso'),
+    ('COMPLETADO', 'Completado'),
+    ('INCOMPLETO', 'Incompleto'),
+    ('SUSPENDIDO', 'Suspendido'),
+    ('NO_INFORMADO', 'No informado'),
+)
+
+CAMPOS_ISCED_F = (
+    ('', 'Seleccione…'),
+    ('01_EDUCACION', '01 - Educación'),
+    ('02_ARTES_HUMANIDADES', '02 - Artes y humanidades'),
+    ('03_CIENCIAS_SOCIALES', '03 - Ciencias sociales, periodismo e información'),
+    ('04_ADMIN_DERECHO', '04 - Administración de empresas, negocios y derecho'),
+    ('05_CIENCIAS_EXACTAS', '05 - Ciencias naturales, matemáticas y estadística'),
+    ('06_TIC', '06 - Tecnologías de la información y la comunicación (TIC)'),
+    ('07_INGENIERIA_INDUSTRIA', '07 - Ingeniería, industria y construcción'),
+    ('08_AGRO_VETERINARIA', '08 - Agricultura, silvicultura, pesca y veterinaria'),
+    ('09_SALUD_BIENESTAR', '09 - Salud y bienestar'),
+    ('10_SERVICIOS', '10 - Servicios'),
+    ('99_OTRO', '99 - Programas genéricos o no clasificados'),
+)
+
 class AcademicoForm(forms.Form):
- nivelId=forms.ChoiceField(label='Nivel académico',required=False)
- titulo1Id=forms.ChoiceField(label='Título 1',required=False)
- especialidadId=forms.ChoiceField(label='Especialidad 1',required=False)
- titulo2Id=forms.ChoiceField(label='Título 2',required=False)
- especialidad2Id=forms.ChoiceField(label='Especialidad 2',required=False)
- descripcionPostgrado=forms.CharField(label='Postgrado',required=False,max_length=250,widget=forms.TextInput(attrs={'placeholder':'Indique postgrado','list':'lista_especialidades_sug'}))
- descripcionDoctorado=forms.CharField(label='Doctorado',required=False,max_length=250,widget=forms.TextInput(attrs={'placeholder':'Indique doctorado','list':'lista_especialidades_sug'}))
- descripcionMagister=forms.CharField(label='Magíster',required=False,max_length=250,widget=forms.TextInput(attrs={'placeholder':'Indique magíster','list':'lista_especialidades_sug'}))
- honorId=forms.ChoiceField(label='Honor académico',required=False)
- ocupacion1=forms.CharField(label='Ocupación 1',required=False,max_length=180)
- ocupacion2=forms.CharField(label='Ocupación 2',required=False,max_length=180)
- ocupacion3=forms.CharField(label='Ocupación 3',required=False,max_length=180)
- disponibilidadId=forms.ChoiceField(label='Disponibilidad',required=False)
- modalidadId=forms.ChoiceField(label='Modalidad',required=False)
- observacion=forms.CharField(label='Observación',required=False,widget=forms.Textarea(attrs={'rows':3}))
- postgrado=forms.BooleanField(required=False,widget=forms.HiddenInput())
- doctorado=forms.BooleanField(required=False,widget=forms.HiddenInput())
- magister=forms.BooleanField(required=False,widget=forms.HiddenInput())
+    # Fila 1 (Nivel y Estado)
+    nivelId = forms.ChoiceField(label='Nivel académico (ISCED)', required=False)
+    estadoEstudio = forms.ChoiceField(label='Estado del estudio', required=False, choices=ESTADOS_ESTUDIO)
+    campoEducacion = forms.ChoiceField(label='Campo de educación (ISCED-F)', required=False, choices=CAMPOS_ISCED_F)
 
- def __init__(self,*a,c=None,**k):
-  super().__init__(*a,**k)
-  c=c or {}
-  self.fields['nivelId'].choices=c.get('niveles',())
-  self.fields['titulo1Id'].choices=c.get('titulos',())
-  self.fields['titulo2Id'].choices=c.get('titulos',())
-  self.fields['especialidadId'].choices=c.get('especialidades',())
-  self.fields['especialidad2Id'].choices=c.get('especialidades',())
-  self.fields['honorId'].choices=c.get('honores',())
-  self.fields['disponibilidadId'].choices=c.get('disponibilidades',())
-  self.fields['modalidadId'].choices=c.get('modalidades',())
+    # Fila 2 (Cualificación y Especialidad)
+    titulo1Id = forms.ChoiceField(label='Título académico', required=False)
+    especialidadId = forms.ChoiceField(label='Especialidad / Carrera', required=False)
+    institucion = forms.CharField(label='Institución educativa', required=False, max_length=250, widget=forms.TextInput(attrs={'placeholder': 'Ej. Universidad / Instituto'}))
 
- def clean(self):
-  d=super().clean()
-  dp=(d.get('descripcionPostgrado') or '').strip()
-  dd=(d.get('descripcionDoctorado') or '').strip()
-  dm=(d.get('descripcionMagister') or '').strip()
-  d['postgrado']=bool(dp)
-  d['doctorado']=bool(dd)
-  d['magister']=bool(dm)
-  return d
+    # Fila 3 (Reconocimientos y Ocupación)
+    anioGraduacion = forms.CharField(label='Año de graduación / Egreso', required=False, max_length=10, widget=forms.TextInput(attrs={'placeholder': 'AAAA (ej. 2022)', 'inputmode': 'numeric'}))
+    honorId = forms.ChoiceField(label='Honor académico', required=False)
+    ocupacion1 = forms.CharField(label='Ocupación principal', required=False, max_length=180, widget=forms.TextInput(attrs={'placeholder': 'Profesión u ocupación principal'}))
+
+    # Fila 4 (Laboral y Dedicación)
+    ocupacion2 = forms.CharField(label='Cargo desempeñado', required=False, max_length=180, widget=forms.TextInput(attrs={'placeholder': 'Cargo o rol laboral'}))
+    ocupacion3 = forms.CharField(label='Organización / Empresa', required=False, max_length=180, widget=forms.TextInput(attrs={'placeholder': 'Empresa o entidad donde labora'}))
+    disponibilidadId = forms.ChoiceField(label='Disponibilidad', required=False)
+
+    # Fila 5 (Modalidad y Observaciones)
+    modalidadId = forms.ChoiceField(label='Modalidad', required=False)
+    observacion = forms.CharField(label='Observaciones', required=False, widget=forms.Textarea(attrs={'rows': 3, 'placeholder': 'Observaciones o notas adicionales'}))
+
+    # Campos de compatibilidad con backend existente
+    titulo2Id = forms.ChoiceField(required=False, widget=forms.HiddenInput())
+    especialidad2Id = forms.ChoiceField(required=False, widget=forms.HiddenInput())
+    titulo2 = forms.CharField(required=False, widget=forms.HiddenInput())
+    descripcionPostgrado = forms.CharField(required=False, widget=forms.HiddenInput())
+    descripcionDoctorado = forms.CharField(required=False, widget=forms.HiddenInput())
+    descripcionMagister = forms.CharField(required=False, widget=forms.HiddenInput())
+    postgrado = forms.BooleanField(required=False, widget=forms.HiddenInput())
+    doctorado = forms.BooleanField(required=False, widget=forms.HiddenInput())
+    magister = forms.BooleanField(required=False, widget=forms.HiddenInput())
+
+    def __init__(self, *a, c=None, **k):
+        super().__init__(*a, **k)
+        c = c or {}
+        self.fields['nivelId'].choices = c.get('niveles', ())
+        self.fields['titulo1Id'].choices = c.get('titulos', ())
+        self.fields['especialidadId'].choices = c.get('especialidades', ())
+        self.fields['honorId'].choices = c.get('honores', ())
+        self.fields['disponibilidadId'].choices = c.get('disponibilidades', ())
+        self.fields['modalidadId'].choices = c.get('modalidades', ())
+
+    def clean(self):
+        d = super().clean()
+        ee = (d.get('estadoEstudio') or '').strip()
+        ce = (d.get('campoEducacion') or '').strip()
+        ag = (d.get('anioGraduacion') or '').strip()
+        inst = (d.get('institucion') or '').strip()
+
+        # Mapeo persistente y retrocompatible
+        d['descripcionPostgrado'] = ee or d.get('descripcionPostgrado') or ''
+        d['descripcionDoctorado'] = ce or d.get('descripcionDoctorado') or ''
+        d['descripcionMagister'] = ag or d.get('descripcionMagister') or ''
+        d['titulo2'] = inst or d.get('titulo2') or ''
+        d['titulo_2'] = inst or d.get('titulo2') or ''
+
+        d['postgrado'] = bool(d['descripcionPostgrado'])
+        d['doctorado'] = bool(d['descripcionDoctorado'])
+        d['magister'] = bool(d['descripcionMagister'])
+        return d
 
 class RedSocialForm(forms.Form):
  facebook=forms.CharField(label='Facebook',required=False,max_length=250,widget=forms.TextInput(attrs={'placeholder':'https://facebook.com/usuario o @usuario'}))

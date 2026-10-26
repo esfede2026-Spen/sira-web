@@ -17,9 +17,9 @@ def enviar_correo_bienvenida(request, datos_persona, token=None):
         return False
 
     destinatario = str(destinatario).strip()
-    remitente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Victoria <sira.admin01@gmail.com>')
+    remitente = getattr(settings, 'DEFAULT_FROM_EMAIL', 'Victoria')
     if not remitente or remitente == 'webmaster@localhost':
-        remitente = 'Victoria <sira.admin01@gmail.com>'
+        remitente = 'Victoria'
 
     # Extracción de parámetros
     p_nom = datos_persona.get('primerNombre') or datos_persona.get('primer_nombre') or ''
@@ -40,16 +40,16 @@ def enviar_correo_bienvenida(request, datos_persona, token=None):
     if token:
         url_actualizar = f"{url_base}/registro/{token}/personales/"
 
-    url_cancelar = f"{url_base}/suscripcion/cancelar?persona_id={persona_id}&tipo_documento={tipo_doc}&numero_documento={doc_num}&correo={destinatario}"
+    url_cancelar = f"{url_base}/cancelar-suscripcion/?persona_id={persona_id}&tipo_documento={tipo_doc}&numero_documento={doc_num}&correo={destinatario}"
 
-    asunto = "Bienvenido(a) a la Red de Personas SIRA"
+    asunto = "Bienvenido(a) a la Red de Personas VICTORIA"
 
     # Cuerpo en Texto Plano (Punto 9 Sprint 2)
     texto_plano = f"""Estimado(a) {nombre_completo},
 
 Reciba un cordial saludo.
 
-Le damos la bienvenida a la Red de Personas SIRA, un espacio diseñado para conectar personas, conocimientos, capacidades y experiencias en función de objetivos comunes y proyectos de interés colectivo.
+Le damos la bienvenida a la Red de Personas VICTORIA, un espacio diseñado para conectar personas, conocimientos, capacidades y experiencias en función de objetivos comunes y proyectos de interés colectivo.
 
 Agradecemos sinceramente el tiempo dedicado a completar su registro y el aporte de información sobre sus conocimientos, experiencia y áreas de especialización. Su participación fortalece esta red y contribuye a identificar oportunidades de colaboración, organización e integración entre personas con intereses y capacidades afines.
 
@@ -63,15 +63,15 @@ Privacidad y protección de datos
 La información suministrada por usted será tratada bajo principios de confidencialidad, integridad, disponibilidad y trazabilidad, alineados con las buenas prácticas promovidas por la familia de normas ISO/IEC 27000 para la gestión de la seguridad de la información.
 
 Sus datos serán utilizados únicamente para:
-- Gestionar y mantener su perfil dentro de la Red de Personas SIRA.
+- Gestionar y mantener su perfil dentro de la Red de Personas VICTORIA.
 - Facilitar la conformación e integración de grupos de trabajo, comunidades, equipos técnicos o iniciativas relacionadas con sus áreas de experiencia y conocimiento.
 - Enviarle información, invitaciones, oportunidades de participación, actividades o comunicaciones asociadas a los objetivos de la red.
 - Mantener actualizada la información necesaria para el adecuado funcionamiento del sistema.
 
-Sus datos personales no serán vendidos, transferidos ni compartidos con terceros para fines comerciales o distintos a los establecidos por la Red de Personas SIRA, salvo obligación legal expresa o autorización otorgada por usted.
+Sus datos personales no serán vendidos, transferidos ni compartidos con terceros para fines comerciales o distintos a los establecidos por la Red de Personas VICTORIA, salvo obligación legal expresa o autorización otorgada por usted.
 
 Solicitud de cancelación de participación
-Si en algún momento desea retirarse de la Red de Personas SIRA o solicitar que su perfil sea desactivado, podrá registrar una solicitud utilizando el siguiente enlace:
+Si en algún momento desea retirarse de la Red de Personas VICTORIA o solicitar que su perfil sea desactivado, podrá registrar una solicitud utilizando el siguiente enlace:
 
 > Solicitar cancelación de participación:
 {url_cancelar}
@@ -80,14 +80,14 @@ Su solicitud será registrada en el sistema para su procesamiento y seguimiento 
 
 Le agradecemos nuevamente su registro y la confianza depositada en este proyecto.
 
-Esperamos contar con su experiencia, conocimientos y participación en las distintas iniciativas que se desarrollen dentro de la Red de Personas SIRA.
+Esperamos contar con su experiencia, conocimientos y participación en las distintas iniciativas que se desarrollen dentro de la Red de Personas VICTORIA.
 
 Atentamente,
 Equipo Victoria
 Sistema Inteligente de Registro Activo · by WTogether
 
-Victoria by WTogether 2.0 · Tecnología desarrollada por Infosoft, C.A.
-Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gmail.com para: {destinatario}
+Victoria by WTogether
+Mensaje automático generado por Victoria para: {destinatario}
 """
 
     # Versión HTML enriquecida corporativa
@@ -120,7 +120,7 @@ Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gm
     <div class="content">
       <p>Estimado(a) <strong>{nombre_completo}</strong>,</p>
       <p>Reciba un cordial saludo.</p>
-      <p>Le damos la bienvenida a la <strong>Red de Personas SIRA</strong>, un espacio diseñado para conectar personas, conocimientos, capacidades y experiencias en función de objetivos comunes y proyectos de interés colectivo.</p>
+      <p>Le damos la bienvenida a la <strong>Red de Personas VICTORIA</strong>, un espacio diseñado para conectar personas, conocimientos, capacidades y experiencias en función de objetivos comunes y proyectos de interés colectivo.</p>
       <p>Agradecemos sinceramente el tiempo dedicado a completar su registro y el aporte de información sobre sus conocimientos, experiencia y áreas de especialización. Su participación fortalece esta red y contribuye a identificar oportunidades de colaboración, organización e integración entre personas con intereses y capacidades afines.</p>
 
       <h3 style="color: #06396f; margin: 24px 0 8px; font-size: 16px;">Actualización de sus datos</h3>
@@ -131,7 +131,7 @@ Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gm
         <strong style="color: #06396f; display: block; margin-bottom: 6px;">Privacidad y protección de datos</strong>
         La información suministrada por usted será tratada bajo principios de confidencialidad, integridad, disponibilidad y trazabilidad, alineados con las buenas prácticas promovidas por la familia de normas ISO/IEC 27000 para la gestión de la seguridad de la información.
         <ul style="margin-top: 10px;">
-          <li>Gestionar y mantener su perfil dentro de la Red de Personas SIRA.</li>
+          <li>Gestionar y mantener su perfil dentro de la Red de Personas VICTORIA.</li>
           <li>Facilitar la conformación e integración de grupos de trabajo, comunidades y equipos técnicos.</li>
           <li>Enviarle información, invitaciones o comunicaciones asociadas a los objetivos de la red.</li>
           <li>Mantener actualizada la información necesaria para el adecuado funcionamiento del sistema.</li>
@@ -140,7 +140,7 @@ Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gm
       </div>
 
       <h3 style="color: #64748b; margin: 24px 0 8px; font-size: 14px;">Solicitud de cancelación de participación</h3>
-      <p style="font-size: 13px; color: #64748b;">Si en algún momento desea retirarse de la Red de Personas SIRA o solicitar que su perfil sea desactivado, podrá registrar su solicitud en el siguiente enlace:</p>
+      <p style="font-size: 13px; color: #64748b;">Si en algún momento desea retirarse de la Red de Personas VICTORIA o solicitar que su perfil sea desactivado, podrá registrar su solicitud en el siguiente enlace:</p>
       <p><a href="{url_cancelar}" class="btn btn-secondary">&rarr; Solicitar cancelación de participación</a></p>
 
       <p style="margin-top: 28px;">Atentamente,<br>
@@ -148,8 +148,8 @@ Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gm
       <span style="color: #64748b; font-size: 13px;">Sistema Inteligente de Registro Activo · by WTogether</span></p>
     </div>
     <div class="footer">
-      <strong>Victoria by WTogether 2.0</strong> · Tecnología desarrollada por Infosoft, C.A.<br>
-      Mensaje automático generado por la cuenta de correo de Victoria sira.admin01@gmail.com para: {destinatario}
+      <strong>Victoria by WTogether</strong><br>
+      Mensaje automático generado por Victoria para: {destinatario}
     </div>
   </div>
 </body>

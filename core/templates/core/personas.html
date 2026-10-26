@@ -1,1 +1,179 @@
-{% extends 'core/base.html' %}{% block title %}Personas · Victoria{% endblock %}{% block content %}<div class="head"><div><span>Administración</span><h1>Personas</h1><p>Registrar, editar, completar y retirar personas de prueba.</p></div><a class="primary" href="{% url 'persona_nueva' %}">Registrar persona</a></div><div class="table"><table><thead><tr><th>ID</th><th>Documento</th><th>Nombre</th><th>Estado</th><th>Fase 1</th><th>Acciones</th></tr></thead><tbody>{% for x in rows %}<tr><td>{{x.id_persona}}</td><td>{{x.documento_numero}}</td><td><b>{{x.primer_nombre}} {{x.primer_apellido}}</b></td><td><i>{{x.estado_registro}}</i></td><td>{{x.registro_fase1_completo}}</td><td class="actions"><a href="{% url 'persona_resumen' x.id_persona %}">Abrir</a><a href="{% url 'persona_editar' x.id_persona %}">Editar</a><a class="danger-link" href="{% url 'persona_eliminar' x.id_persona %}">Eliminar</a></td></tr>{% empty %}<tr><td colspan="6">No hay personas.</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% extends 'core/base.html' %}
+{% load static %}
+{% block title %}Personas · Victoria{% endblock %}
+{% block content %}
+<div class="head" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+  <div>
+    <span style="font-size: 0.82rem; font-weight: 700; color: #0057a8; text-transform: uppercase; letter-spacing: 0.05em;">Administración</span>
+    <h1 style="margin: 0.2rem 0; font-size: 1.75rem; font-weight: 800; color: #06396f;">Gestión de Personas</h1>
+    <p style="margin: 0; font-size: 0.9rem; color: #64748b;">Consultar, registrar, editar y auditar personas registradas en el sistema.</p>
+  </div>
+  <a class="primary" href="{% url 'persona_nueva' %}" style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; font-weight: 700; border-radius: 8px; text-decoration: none;">
+    <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2.5;"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    Registrar persona
+  </a>
+</div>
+
+<!-- Filtros de búsqueda y estado -->
+<div class="card sprint2-card" style="padding: 1.15rem 1.5rem; margin-bottom: 1.5rem; background: #ffffff; border-radius: 12px; border: 1px solid #dbe6ef; box-shadow: 0 2px 8px rgba(6,57,111,0.04);">
+  <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; justify-content: space-between;">
+    <div style="display: flex; flex: 1 1 300px; gap: 0.75rem; align-items: center;">
+      <div style="position: relative; width: 100%; max-width: 420px;">
+        <input type="text" id="persona-search" placeholder="Buscar por documento o nombre..." onkeyup="filtrarPersonas()" style="width: 100%; padding: 0.6rem 0.85rem 0.6rem 2.25rem; border: 1px solid #c8d8e6; border-radius: 8px; font-size: 0.9rem;">
+        <svg viewBox="0 0 24 24" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: #94a3b8; fill: none; stroke-width: 2;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      </div>
+      <select id="filtro-estado" onchange="filtrarPersonas()" style="min-width: 150px; padding: 0.6rem 0.85rem; border: 1px solid #c8d8e6; border-radius: 8px; font-size: 0.9rem; background: #ffffff;">
+        <option value="">Todos los estados</option>
+        <option value="ACTIVO">Activo</option>
+        <option value="INACTIVO">Inactivo</option>
+      </select>
+    </div>
+    <div style="color: #64748b; font-size: 0.88rem; font-weight: 600;">
+      Total: <span id="contador-personas" style="color: #06396f; font-weight: 800;">{{ rows|length }}</span> personas
+    </div>
+  </div>
+</div>
+
+<!-- Vista de Escritorio: Tabla Estándar Victoria -->
+<div class="table-responsive-desktop" style="background: #ffffff; border-radius: 12px; border: 1px solid #dbe6ef; box-shadow: 0 4px 14px rgba(6,57,111,0.04); overflow: hidden; margin-bottom: 1.5rem;">
+  <table class="clean-table" style="width: 100%; border-collapse: collapse;">
+    <thead style="background: #f8fafc; border-bottom: 2px solid #e2edf6;">
+      <tr>
+        <th style="padding: 0.85rem 1rem; text-align: left; font-size: 0.82rem; font-weight: 700; color: #475569; text-transform: uppercase;">ID</th>
+        <th style="padding: 0.85rem 1rem; text-align: left; font-size: 0.82rem; font-weight: 700; color: #475569; text-transform: uppercase;">Documento</th>
+        <th style="padding: 0.85rem 1rem; text-align: left; font-size: 0.82rem; font-weight: 700; color: #475569; text-transform: uppercase;">Nombre y Apellido</th>
+        <th style="padding: 0.85rem 1rem; text-align: center; font-size: 0.82rem; font-weight: 700; color: #475569; text-transform: uppercase;">Estado</th>
+        <th style="padding: 0.85rem 1rem; text-align: center; font-size: 0.82rem; font-weight: 700; color: #475569; text-transform: uppercase;">Fase 1</th>
+        <th style="padding: 0.85rem 1rem; text-align: center; font-size: 0.82rem; font-weight: 700; color: #475569; text-transform: uppercase; width: 140px;">Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="tabla-personas-body">
+      {% for x in rows %}
+      <tr class="fila-persona" data-doc="{{ x.documento_numero|default:''|lower }}" data-nombre="{{ x.primer_nombre|default:''|lower }} {{ x.primer_apellido|default:''|lower }}" data-estado="{{ x.estado_registro|default:''|upper }}" style="border-bottom: 1px solid #edf2f7; transition: background 0.15s ease;">
+        <td style="padding: 0.85rem 1rem; color: #64748b; font-weight: 600; font-size: 0.88rem;">#{{ x.id_persona }}</td>
+        <td style="padding: 0.85rem 1rem; font-weight: 700; color: #06396f; font-size: 0.92rem;">{{ x.documento_numero }}</td>
+        <td style="padding: 0.85rem 1rem; font-weight: 600; color: #1e293b; font-size: 0.92rem;">{{ x.primer_nombre }} {{ x.primer_apellido }}</td>
+        <td style="padding: 0.85rem 1rem; text-align: center;">
+          {% if x.estado_registro == 'ACTIVO' %}
+            <span class="pill-badge pill-badge-green">Activo</span>
+          {% else %}
+            <span class="pill-badge pill-badge-red">{{ x.estado_registro|default:'Inactivo' }}</span>
+          {% endif %}
+        </td>
+        <td style="padding: 0.85rem 1rem; text-align: center;">
+          {% if x.registro_fase1_completo == 'S' %}
+            <span class="pill-badge pill-badge-green" title="Fase 1 completada">Completa</span>
+          {% else %}
+            <span class="pill-badge pill-badge-yellow" title="Fase 1 pendiente">Pendiente</span>
+          {% endif %}
+        </td>
+        <td style="padding: 0.85rem 1rem; text-align: center;">
+          <div style="display: flex; gap: 0.45rem; justify-content: center; align-items: center;">
+            <a href="{% url 'persona_resumen' x.id_persona %}" class="action-btn" title="Ver resumen de persona" style="background: #e0f2fe; color: #0284c7; width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </a>
+            <a href="{% url 'persona_editar' x.id_persona %}" class="action-btn" title="Editar persona" style="background: #f1f5f9; color: #0057a8; width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            </a>
+            <a href="{% url 'persona_eliminar' x.id_persona %}" class="action-btn" title="Eliminar persona" style="background: #fee2e2; color: #dc2626; width: 32px; height: 32px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none;">
+              <svg viewBox="0 0 24 24" style="width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+            </a>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="6" style="text-align: center; color: #94a3b8; padding: 2rem;">No hay personas registradas.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Vista Móvil: Tarjetas Apilables sin Desborde Horizontal -->
+<div class="cards-mobile-view">
+  {% for x in rows %}
+  <div class="persona-card-item card" data-doc="{{ x.documento_numero|default:''|lower }}" data-nombre="{{ x.primer_nombre|default:''|lower }} {{ x.primer_apellido|default:''|lower }}" data-estado="{{ x.estado_registro|default:''|upper }}" style="background: #ffffff; border: 1px solid #dbe6ef; border-radius: 12px; padding: 1.15rem; margin-bottom: 0.85rem; box-shadow: 0 2px 8px rgba(6,57,111,0.04);">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+      <div>
+        <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">#{{ x.id_persona }} · Doc: {{ x.documento_numero }}</span>
+        <h3 style="margin: 0.15rem 0 0 0; color: #06396f; font-size: 1.15rem; font-weight: 800;">{{ x.primer_nombre }} {{ x.primer_apellido }}</h3>
+      </div>
+      <div>
+        {% if x.estado_registro == 'ACTIVO' %}
+          <span class="pill-badge pill-badge-green">Activo</span>
+        {% else %}
+          <span class="pill-badge pill-badge-red">{{ x.estado_registro|default:'Inactivo' }}</span>
+        {% endif %}
+      </div>
+    </div>
+    
+    <div style="font-size: 0.88rem; color: #475569; margin-bottom: 0.85rem; display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 0.6rem 0.85rem; border-radius: 8px;">
+      <span><strong>Fase 1:</strong></span>
+      {% if x.registro_fase1_completo == 'S' %}
+        <span class="pill-badge pill-badge-green" style="font-size: 0.78rem;">Completada</span>
+      {% else %}
+        <span class="pill-badge pill-badge-yellow" style="font-size: 0.78rem;">Pendiente</span>
+      {% endif %}
+    </div>
+
+    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
+      <a href="{% url 'persona_resumen' x.id_persona %}" class="action-btn" title="Ver resumen" style="background: #e0f2fe; color: #0284c7; padding: 0.45rem 0.85rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 700; text-decoration: none;">
+        <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        Ver
+      </a>
+      <a href="{% url 'persona_editar' x.id_persona %}" class="action-btn" title="Editar" style="background: #f1f5f9; color: #0057a8; padding: 0.45rem 0.85rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 700; text-decoration: none;">
+        <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+        Editar
+      </a>
+      <a href="{% url 'persona_eliminar' x.id_persona %}" class="action-btn" title="Eliminar" style="background: #fee2e2; color: #dc2626; padding: 0.45rem 0.85rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.82rem; font-weight: 700; text-decoration: none;">
+        <svg viewBox="0 0 24 24" style="width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+        Eliminar
+      </a>
+    </div>
+  </div>
+  {% empty %}
+  <div style="text-align: center; color: #94a3b8; padding: 2rem; background: #ffffff; border-radius: 12px; border: 1px solid #dbe6ef;">
+    No hay personas registradas.
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+function filtrarPersonas() {
+  const q = (document.getElementById('persona-search').value || '').trim().toLowerCase();
+  const est = (document.getElementById('filtro-estado').value || '').trim().toUpperCase();
+  
+  // Filtrar tabla escritorio
+  const filas = document.querySelectorAll('.fila-persona');
+  let visibles = 0;
+  filas.forEach(f => {
+    const doc = f.getAttribute('data-doc') || '';
+    const nom = f.getAttribute('data-nombre') || '';
+    const estado = f.getAttribute('data-estado') || '';
+    const matchQ = !q || doc.includes(q) || nom.includes(q);
+    const matchEst = !est || estado === est;
+    if (matchQ && matchEst) {
+      f.style.display = '';
+      visibles++;
+    } else {
+      f.style.display = 'none';
+    }
+  });
+
+  // Filtrar tarjetas móvil
+  const tarjetas = document.querySelectorAll('.persona-card-item');
+  tarjetas.forEach(t => {
+    const doc = t.getAttribute('data-doc') || '';
+    const nom = t.getAttribute('data-nombre') || '';
+    const estado = t.getAttribute('data-estado') || '';
+    const matchQ = !q || doc.includes(q) || nom.includes(q);
+    const matchEst = !est || estado === est;
+    t.style.display = (matchQ && matchEst) ? '' : 'none';
+  });
+
+  const contador = document.getElementById('contador-personas');
+  if (contador) contador.innerText = visibles;
+}
+</script>
+{% endblock %}

@@ -19,12 +19,9 @@
 img[src*="venezuela_panal"]{display:block;max-width:100%;margin:0 auto 1.35rem!important}
 @media(max-width:700px){.victoria-system-footer{display:grid;gap:.2rem}.victoria-system-footer span+span:before{content:'';margin:0}.victoria-login-brand-block{justify-content:center;text-align:left}.victoria-login-brand-block img{width:78px;height:78px}.victoria-login-brand-block .victoria-name{font-size:1.8rem}}
 </style>
-</head><body><header class="top"><img src="{% static 'wtogether/img/victoria_logo.png' %}" alt="Victoria"><div><b>Victoria</b><small>Sistema Inteligente de Registro Activo</small><span class="victoria-by">by WTogether</span></div><nav><a href="/login/">Iniciar sesión</a></nav></header><main class="card"><h1>Cancelar suscripción</h1><p>Utilice esta opción para solicitar la cancelación de su suscripción. La solicitud será recibida para revisión administrativa.</p><form method="post">{% csrf_token %}<label>Correo registrado</label><input type="email" name="correo" required><label>Motivo inicial</label><textarea name="motivo" rows="5" maxlength="2000" required></textarea><button class="btn" type="submit">Enviar solicitud</button></form></main><footer><b>by WTogether</b> · Tecnología desarrollada por Infosoft, C.A. · Versión 2.1</footer>
-
+</head><body><header class="top"><img src="{% static 'wtogether/img/victoria_logo.png' %}" alt="Victoria"><div><b>Victoria</b><small>Sistema Inteligente de Registro Activo</small><span class="victoria-by">by WTogether</span></div><nav><a href="/login/">Iniciar sesión</a></nav></header><main class="card"><h1>Cancelar suscripción</h1><p>Utilice esta opción para solicitar la cancelación de su suscripción. La solicitud será recibida para revisión administrativa.</p><form method="post">{% csrf_token %}<label>Correo registrado</label><input type="email" name="correo" required><label>Motivo inicial</label><textarea name="motivo" rows="5" maxlength="2000" required></textarea><button class="btn" type="submit">Enviar solicitud</button></form></main>
 
 <footer class="victoria-system-footer">
  <span><strong>Victoria by WTogether</strong></span>
- <span>Tecnología desarrollada por Infosoft, C.A.</span>
- <span>WTogether 2.0</span>
 </footer>
 </body></html>

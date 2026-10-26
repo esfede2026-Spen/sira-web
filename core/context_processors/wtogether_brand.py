@@ -9,7 +9,7 @@ def wtogether_brand(request):
             "product_name": getattr(settings, "WTOGETHER_PRODUCT_NAME", "Victoria"),
             "product_signature": getattr(settings, "WTOGETHER_PRODUCT_SIGNATURE", "Victoria by WTogether"),
             "product_slogan": getattr(settings, "WTOGETHER_PRODUCT_SLOGAN", "Connecting People, Building Communities"),
-            "owner_name": getattr(settings, "WTOGETHER_OWNER_NAME", "Infosoft, C.A."),
-            "contact_email": getattr(settings, "WTOGETHER_CONTACT_EMAIL", "sira.admin01@gmail.com"),
+            "owner_name": getattr(settings, "WTOGETHER_OWNER_NAME", "WTogether"),
+            "contact_email": getattr(settings, "WTOGETHER_CONTACT_EMAIL", "contacto@wtogether.org"),
         }
     }

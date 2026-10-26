@@ -27,6 +27,9 @@
 .sprint2-grid-12 .field-l {
   grid-column: span 6;
 }
+.sprint2-grid-12 .field-span-8 {
+  grid-column: span 8;
+}
 .sprint2-grid-12 .field-xl {
   grid-column: 1 / -1;
 }
@@ -281,6 +284,7 @@
   .sprint2-grid-12 .field-l {
     grid-column: span 1;
   }
+  .sprint2-grid-12 .field-span-8,
   .sprint2-grid-12 .field-xl {
     grid-column: 1 / -1;
   }
@@ -299,8 +303,9 @@
   .sprint2-grid-12 .field-sm,
   .sprint2-grid-12 .field-m,
   .sprint2-grid-12 .field-l,
+  .sprint2-grid-12 .field-span-8,
   .sprint2-grid-12 .field-xl {
-    grid-column: 1;
+    grid-column: 1 / -1;
   }
 
   /* Ocultar tabla y mostrar tarjetas en móvil */

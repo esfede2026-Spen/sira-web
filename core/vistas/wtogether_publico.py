@@ -8,5 +8,5 @@ def quienes_somos(request):
 
 def contactanos(request):
     return render(request, "publico/contactanos.html", {
-        "contact_email": getattr(settings, "WTOGETHER_CONTACT_EMAIL", "sira.admin01@gmail.com")
+        "contact_email": getattr(settings, "WTOGETHER_CONTACT_EMAIL", "contacto@wtogether.org")
     })
